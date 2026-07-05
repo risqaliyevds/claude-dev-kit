@@ -62,6 +62,16 @@ claude
 > /core:new-project my-app
 ```
 
+`/core:new-project` is the full interactive bootstrap (git init, fills in
+`CLAUDE.md`, makes the first commit). You rarely need to run it by hand,
+though: a `SessionStart` hook **auto-creates any missing `CHANGELOG.md`,
+`CLAUDE.md`, `.gitignore`, and `.claude/settings.json`** the first time you
+open Claude Code in a git repo. It only runs inside a git work tree and never
+overwrites a file that already exists, so it is safe in existing projects.
+Don't want it in a particular repo? Delete the files after they appear and
+they will be recreated next session — to opt a repo out permanently, disable
+the `core` plugin there or remove the `SessionStart` hook.
+
 ## Updating the kit
 
 Edit skills, commit, push. No `version` field is set on purpose: every commit counts as a new version, so machines with marketplace auto-update enabled pick changes up automatically. Otherwise run `/plugin marketplace update dev-kit`.
