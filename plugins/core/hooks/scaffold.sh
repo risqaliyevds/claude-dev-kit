@@ -6,6 +6,11 @@ set -u
 
 git rev-parse --is-inside-work-tree >/dev/null 2>&1 || exit 0
 
+# Skip plugin/marketplace repos (like this kit itself) — they are not app
+# projects and don't want a scaffolded .env.example / .claude/settings.json.
+[ -f .claude-plugin/marketplace.json ] && exit 0
+[ -f .claude-plugin/plugin.json ] && exit 0
+
 TPL="${CLAUDE_PLUGIN_ROOT:-}/skills/new-project/templates"
 [ -d "$TPL" ] || exit 0
 

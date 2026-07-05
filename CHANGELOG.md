@@ -18,6 +18,11 @@ on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). This repo has no
 - Root `.gitattributes` pinning `*.sh` to LF so hook scripts stay runnable on
   Windows/autocrlf checkouts.
 
+### Fixed
+- `scaffold.sh` now skips plugin/marketplace repos (those with
+  `.claude-plugin/marketplace.json` or `.claude-plugin/plugin.json`), so the
+  kit no longer scaffolds app-project files into itself.
+
 ### Changed
 - Personalized marketplace/plugin metadata and install references
   (`risqaliyevds` / `Murod`).
