@@ -34,7 +34,7 @@ Requires Claude Code v2.1.197+ (`claude update`). `/model opusplan` returns to t
 
 ## One-time setup (per machine)
 
-1. Push this repo to GitHub and replace `YOUR_GITHUB_USERNAME` in `install.sh` and `plugins/core/skills/new-project/templates/settings.json`.
+1. Push this repo to GitHub. (If you forked it, replace `risqaliyevds` in `install.sh` and `plugins/core/skills/new-project/templates/settings.json` with your own username.)
 2. Run:
 
 ```bash
@@ -44,7 +44,7 @@ Requires Claude Code v2.1.197+ (`claude update`). `/model opusplan` returns to t
 or manually, inside Claude Code:
 
 ```
-/plugin marketplace add YOUR_GITHUB_USERNAME/claude-dev-kit
+/plugin marketplace add risqaliyevds/claude-dev-kit
 /plugin install core@dev-kit
 ```
 

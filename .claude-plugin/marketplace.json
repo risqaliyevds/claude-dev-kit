@@ -1,7 +1,7 @@
 {
   "name": "dev-kit",
   "owner": {
-    "name": "YOUR NAME"
+    "name": "Murod"
   },
   "description": "Personal Claude Code setup: changelog automation, commit/release workflows, UI/UX + senior engineering + AI engineering standards, a code-review agent, and an auto-format hook.",
   "plugins": [

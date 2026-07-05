@@ -3,7 +3,7 @@
 # 1) Push this repo to GitHub   2) edit REPO below   3) run ./install.sh
 set -euo pipefail
 
-REPO="YOUR_GITHUB_USERNAME/claude-dev-kit"   # <-- change me
+REPO="risqaliyevds/claude-dev-kit"   # <-- change me
 
 echo ">> Adding marketplace: $REPO"
 claude plugin marketplace add "$REPO"
