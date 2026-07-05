@@ -1,0 +1,7 @@
+# Ruflo / local tooling artifacts
+ruvector.db
+*.db
+
+# OS / editor
+.DS_Store
+Thumbs.db
