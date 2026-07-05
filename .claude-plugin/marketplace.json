@@ -8,7 +8,7 @@
     {
       "name": "core",
       "source": "./plugins/core",
-      "description": "Everything I want in every project: /core:plan, /core:changelog, /core:release, /core:commit, /core:new-project, plus always-on senior-engineer, ai-engineer, fastapi and flutter standards, code-reviewer and researcher agents, opusplan model routing, and a prettier auto-format hook.",
+      "description": "Everything I want in every project: /core:plan, /core:changelog, /core:release, /core:commit, /core:new-project, /core:announcement, /core:report-verify, plus always-on senior-engineer, ai-engineer, nlp, evals, fastapi and flutter standards, code-reviewer and researcher agents, opusplan model routing, and a prettier auto-format hook.",
       "category": "workflow",
       "keywords": ["changelog", "conventional-commits", "ui-ux", "starter"]
     }
