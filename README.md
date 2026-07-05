@@ -64,10 +64,21 @@ claude
 
 `/core:new-project` is the full interactive bootstrap (git init, fills in
 `CLAUDE.md`, makes the first commit). You rarely need to run it by hand,
-though: a `SessionStart` hook **auto-creates any missing `CHANGELOG.md`,
-`CLAUDE.md`, `.gitignore`, and `.claude/settings.json`** the first time you
-open Claude Code in a git repo. It only runs inside a git work tree and never
-overwrites a file that already exists, so it is safe in existing projects.
+though: a `SessionStart` hook (`hooks/scaffold.sh`) **auto-creates any
+missing standard files** the first time you open Claude Code in a git repo:
+
+- Always: `CHANGELOG.md`, `CLAUDE.md`, `README.md`, `.gitignore`,
+  `.gitattributes`, `.editorconfig`, `.env.example`, `.claude/settings.json`
+- Node projects only (`package.json` present): `.nvmrc`
+- Python projects only (`pyproject.toml`/`setup.py`/`setup.cfg`/`requirements.txt`): `.python-version`
+
+`.nvmrc` and `.python-version` are stack-gated on purpose — an unconditional
+`.python-version` makes pyenv switch versions in every directory that has it,
+so forcing it into unrelated repos would break their toolchains. To make them
+unconditional anyway, drop the `if [ -f ... ]` guards in `hooks/scaffold.sh`.
+
+The hook only runs inside a git work tree and never overwrites an existing
+file, so it is safe in established projects and idempotent across sessions.
 Don't want it in a particular repo? Delete the files after they appear and
 they will be recreated next session — to opt a repo out permanently, disable
 the `core` plugin there or remove the `SessionStart` hook.
