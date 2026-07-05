@@ -7,6 +7,9 @@ on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). This repo has no
 ## [Unreleased]
 
 ### Added
+- `/core:init-dev-kit` skill — onboards an existing repo: pulls the latest kit,
+  scaffolds every missing standard file, reorganizes the tree into the
+  convention folders, and formats (safe `git mv`, confirm-before-move).
 - `announcement`, `report-verify`, `nlp`, and `evals` skills (`report-verify`
   bundles `scripts/extract_links.py`).
 - `AGENTS.md` template and scaffold entry — shared tool-agnostic context, with
@@ -31,6 +34,8 @@ on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). This repo has no
 - `scaffold.sh` now skips plugin/marketplace repos (those with
   `.claude-plugin/marketplace.json` or `.claude-plugin/plugin.json`), so the
   kit no longer scaffolds app-project files into itself.
+- Dogfooding: the kit's own repo now has the `.editorconfig` it ships as a
+  required file (previously missing).
 
 ### Changed
 - Personalized marketplace/plugin metadata and install references

@@ -6,6 +6,7 @@ My personal Claude Code setup, packaged as a **plugin marketplace**. Install it 
 
 | Component | Type | What it does |
 |---|---|---|
+| `/core:init-dev-kit` | skill (manual only) | Onboards an existing repo: pulls the latest kit, scaffolds every standard file, reorganizes the tree into the convention folders, and formats |
 | `/core:changelog` | skill (auto + manual) | Updates `CHANGELOG.md` in Keep a Changelog format from your actual git changes |
 | `/core:release <version>` | skill (manual only) | Moves `[Unreleased]` under a version heading, bumps version, commits, tags |
 | `/core:commit` | skill (manual only) | Conventional Commits workflow; checks the changelog first |
