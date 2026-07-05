@@ -5,3 +5,6 @@ ruvector.db
 # OS / editor
 .DS_Store
 Thumbs.db
+
+# Throwaway scratch output
+tmp/

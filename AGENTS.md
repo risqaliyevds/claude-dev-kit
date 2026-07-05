@@ -35,3 +35,11 @@ available in every project.
 - Personalization (`risqaliyevds` / `Murod`) must survive edits — never
   reintroduce the template placeholders into the functional files (`install.sh`,
   `marketplace.json`, `plugin.json`, `new-project/templates/settings.json`).
+
+## Project structure — keep the root clean
+
+Only `README.md`, `AGENTS.md`, `CLAUDE.md`, `CHANGELOG.md`, `install.sh`, and
+config/dotfiles belong at the repo root. Put any new working docs or notes in
+`docs/`, plans in `docs/plans/`, and throwaway output in `tmp/` (gitignored) —
+never scatter generated files across the root. This is the same convention the
+kit ships to every project (see the `AGENTS.md` template).

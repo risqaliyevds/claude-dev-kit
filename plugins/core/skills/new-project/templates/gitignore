@@ -11,3 +11,6 @@ __pycache__/
 .env.*
 !.env.example
 .claude/settings.local.json
+
+# Throwaway scratch output (see AGENTS.md "Project structure")
+tmp/

@@ -12,8 +12,12 @@ on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). This repo has no
 - `AGENTS.md` template and scaffold entry — shared tool-agnostic context, with
   `CLAUDE.md` reduced to a thin layer that imports it (`@AGENTS.md`). The kit's
   own repo was migrated to this pattern too.
-- `/core:plan` now persists the plan to `PLAN.md` and a checklist to `TASKS.md`
-  so planning survives `/clear` and new sessions.
+- `/core:plan` now persists the plan and checklist to `docs/plans/PLAN.md` and
+  `docs/plans/TASKS.md` so planning survives `/clear` and new sessions.
+- "Project structure" convention in the `AGENTS.md` template (and the kit's own
+  `AGENTS.md`): only `README`/`AGENTS`/`CLAUDE`/`CHANGELOG` + configs stay at the
+  root; docs → `docs/`, plans → `docs/plans/`, screenshots → `screenshots/`,
+  datasets → `datasets/`, scripts → `scripts/`, scratch → `tmp/` (gitignored).
 - `SessionStart` hook (`plugins/core/hooks/scaffold.sh`) that force-creates the
   standard project files in any git repo — create-if-missing, idempotent, and
   gated to a git work tree.
