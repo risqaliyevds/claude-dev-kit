@@ -39,9 +39,15 @@ Everything you generate goes in a dedicated folder — create it on first use:
 | Screenshots / captured images | `screenshots/` |
 | Datasets / sample data | `datasets/` |
 | One-off / helper scripts | `scripts/` |
-| Throwaway scratch output | `tmp/` (gitignored) |
+| Throwaway scratch output, reports | `tmp/` (gitignored) |
 
 Never write a generated doc, screenshot, dataset, or scratch file to the repo
 root. If a skill or tool would drop one in the root, redirect it to the folder
 above. (Large datasets usually shouldn't be committed — gitignore `datasets/`
 if so.)
+
+Two kinds of files stay at the root but must be gitignored, never moved:
+**secrets** (`.env`, `.env.*` except `.env.example`, keys, cookies — the app
+reads them in place) and **local tooling artifacts** (`ruvector.db`, `*.rvf`,
+`agentdb.*` — tools recreate them there). If a secret is ever committed, untrack
+it with `git rm --cached` — do not delete the working file.

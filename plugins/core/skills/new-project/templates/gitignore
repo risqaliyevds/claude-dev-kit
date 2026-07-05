@@ -12,5 +12,12 @@ __pycache__/
 !.env.example
 .claude/settings.local.json
 
+# Local agent tooling artifacts
+ruvector.db
+agentdb.*
+*.rvf
+*.rvf.lock
+
 # Throwaway scratch output (see AGENTS.md "Project structure")
 tmp/
+*.bak

@@ -8,8 +8,15 @@ on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). This repo has no
 
 ### Added
 - `/core:init-dev-kit` skill — onboards an existing repo: pulls the latest kit,
-  scaffolds every missing standard file, reorganizes the tree into the
-  convention folders, and formats (safe `git mv`, confirm-before-move).
+  scaffolds every missing standard file, runs a full **root triage** that
+  classifies every loose file (docs, scratch/reports, secrets, tooling
+  artifacts) and proposes the right action per category, then formats
+  (web via prettier, Python via ruff/black). Safe by design: one consolidated
+  plan, confirm before any move/delete/untrack/reformat, never touches source or
+  tool-mandated config, and untracks committed secrets with `git rm --cached`
+  rather than deleting them.
+- gitignore template now ignores local tooling artifacts (`ruvector.db`,
+  `agentdb.*`, `*.rvf`, `*.rvf.lock`) and `*.bak`.
 - `announcement`, `report-verify`, `nlp`, and `evals` skills (`report-verify`
   bundles `scripts/extract_links.py`).
 - `AGENTS.md` template and scaffold entry — shared tool-agnostic context, with
