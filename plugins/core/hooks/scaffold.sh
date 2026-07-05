@@ -24,6 +24,7 @@ ensure() {
 
 # Always required — universal and safe in any repo.
 ensure CHANGELOG.md   CHANGELOG.md
+ensure AGENTS.md      AGENTS.md
 ensure CLAUDE.md      CLAUDE.md
 ensure README.md      README.md
 ensure gitignore      .gitignore

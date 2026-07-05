@@ -1,26 +1,16 @@
-# {{PROJECT_NAME}}
+# {{PROJECT_NAME}} — Claude Code
 
-{{ONE_LINE_DESCRIPTION}}
+Shared, tool-agnostic project context lives in `AGENTS.md` (imported below) so
+every agent tool reads one source of truth. Keep stack, commands, and
+conventions there; keep only Claude-specific guidance in this file.
 
-## Stack
-
-{{STACK}}
-
-## Commands
-
-- Dev server: `{{DEV_COMMAND}}`
-- Tests: `{{TEST_COMMAND}}`
-- Lint: `{{LINT_COMMAND}}`
-- Build: `{{BUILD_COMMAND}}`
-
-## Conventions
-
-- Keep `CHANGELOG.md` current: after completing any user-visible feature, fix, or change, add an entry under `[Unreleased]` (the changelog skill knows the format).
-- Commits follow Conventional Commits (`feat: ...`, `fix: ...`); use `/core:commit`.
-- Never read, print, or commit `.env` files or other secrets.
-- Prefer small, focused changes; run tests before declaring work done.
+@AGENTS.md
 
 ## Notes for Claude
 
+- Use `/core:commit` for commits and the changelog skill to keep `CHANGELOG.md`
+  current after user-visible changes.
+- Use `/core:plan` for non-trivial work; it persists the plan to `PLAN.md` and a
+  checklist to `TASKS.md`.
 - If a request is ambiguous, ask before writing large amounts of code.
 - When finishing a task, state what changed and what you did NOT do.

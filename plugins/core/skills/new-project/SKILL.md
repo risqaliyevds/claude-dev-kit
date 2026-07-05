@@ -10,7 +10,8 @@ Set up the current directory as a new project ("$ARGUMENTS"). Templates live in 
 1. If this directory is not a git repository, run `git init`.
 2. Copy each template below into the project, but never overwrite a file that already exists:
    - `templates/CHANGELOG.md` -> `./CHANGELOG.md`
-   - `templates/CLAUDE.md` -> `./CLAUDE.md`
+   - `templates/AGENTS.md` -> `./AGENTS.md` (shared, tool-agnostic context)
+   - `templates/CLAUDE.md` -> `./CLAUDE.md` (thin layer that imports `AGENTS.md`)
    - `templates/README.md` -> `./README.md`
    - `templates/settings.json` -> `./.claude/settings.json`
    - `templates/editorconfig` -> `./.editorconfig`
@@ -19,6 +20,6 @@ Set up the current directory as a new project ("$ARGUMENTS"). Templates live in 
    - `templates/gitignore` -> `./.gitignore` (if one exists, merge missing lines instead)
    - `templates/nvmrc` -> `./.nvmrc` (only if this is a Node project, i.e. `package.json` exists)
    - `templates/python-version` -> `./.python-version` (only if this is a Python project: `pyproject.toml`, `setup.py`, `setup.cfg`, or `requirements.txt` exists)
-3. Fill in the `{{PLACEHOLDERS}}` in `CLAUDE.md`: ask me for the project name, a one-line description, the tech stack, and the dev/test/lint/build commands, then write them in. Remove placeholder lines that do not apply.
+3. Fill in the `{{PLACEHOLDERS}}` (they live in `AGENTS.md`, and the title/first line of `CLAUDE.md` and `README.md`): ask me for the project name, a one-line description, the tech stack, and the dev/test/lint/build commands, then write them in. Remove placeholder lines that do not apply.
 4. Ask which language(s) the project uses and remind me to install the matching code-intelligence plugin from `claude-plugins-official` (for example `typescript-lsp` or `pyright-lsp`) if I have not already.
 5. Make the initial commit: `chore: bootstrap project from dev-kit`.

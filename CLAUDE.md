@@ -1,41 +1,14 @@
-# claude-dev-kit
+# claude-dev-kit — Claude Code
 
-Personal Claude Code plugin marketplace. The `core` plugin ships skills,
-agents, hooks, and project templates, installed at user scope so it is
-available in every project.
+Shared, tool-agnostic context lives in `AGENTS.md` (imported below). This file
+holds only Claude-specific notes.
 
-## Layout
-
-- `.claude-plugin/marketplace.json` — marketplace manifest (owner: Murod).
-- `plugins/core/` — the plugin:
-  - `skills/` — skills (changelog, release, commit, plan, new-project, plus
-    background standards: senior-engineer, ai-engineer, fastapi, flutter, nlp,
-    evals, announcement, report-verify).
-  - `agents/` — code-reviewer, researcher.
-  - `hooks/hooks.json` — prettier auto-format (PostToolUse) and the
-    `scaffold.sh` auto-bootstrap (SessionStart).
-  - `skills/new-project/templates/` — templates shared by the `new-project`
-    skill **and** the `scaffold.sh` hook. Edit them in one place.
-- `install.sh` — one-time machine setup (adds marketplace, installs `core` +
-  Ponytail + UI/UX Pro Max companions).
-
-## Conventions
-
-- No `version` field: every commit to `main` is the new version, so keep
-  `main` releasable.
-- Keep `CHANGELOG.md` current under `[Unreleased]` after any user-visible
-  change (the `changelog` skill knows the format).
-- Conventional Commits (`feat:`, `fix:`, `chore:`); use `/core:commit`.
-- Shell scripts stay LF (`.gitattributes`). After editing a template or the
-  hook, verify `scaffold.sh` still copies it: point `CLAUDE_PLUGIN_ROOT` at
-  `plugins/core` and run it inside a throwaway git repo, checking
-  create-if-missing and stack gating.
-- Run `claude plugin validate .` before pushing (the "no version" warning is
-  expected).
+@AGENTS.md
 
 ## Notes for Claude
 
-- Personalization (`risqaliyevds` / `Murod`) must survive edits — never
-  reintroduce `YOUR_GITHUB_USERNAME` / `YOUR NAME` placeholders into the
-  functional files.
+- This repo IS the dev-kit, so dogfood it: keep `CHANGELOG.md` current under
+  `[Unreleased]`, and follow the same conventions the kit ships.
+- The `scaffold.sh` hook skips this repo (it has `.claude-plugin/marketplace.json`),
+  so standard project files here are maintained by hand, not auto-generated.
 - When finishing a task, state what changed and what you did NOT do.

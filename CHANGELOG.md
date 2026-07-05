@@ -9,6 +9,11 @@ on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). This repo has no
 ### Added
 - `announcement`, `report-verify`, `nlp`, and `evals` skills (`report-verify`
   bundles `scripts/extract_links.py`).
+- `AGENTS.md` template and scaffold entry — shared tool-agnostic context, with
+  `CLAUDE.md` reduced to a thin layer that imports it (`@AGENTS.md`). The kit's
+  own repo was migrated to this pattern too.
+- `/core:plan` now persists the plan to `PLAN.md` and a checklist to `TASKS.md`
+  so planning survives `/clear` and new sessions.
 - `SessionStart` hook (`plugins/core/hooks/scaffold.sh`) that force-creates the
   standard project files in any git repo — create-if-missing, idempotent, and
   gated to a git work tree.
