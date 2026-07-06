@@ -19,7 +19,10 @@ Work like a careful senior engineer.
 **After writing**
 - Run the project's tests and linter if they exist; fix what you broke.
 - New behavior gets a test when a test suite exists. Test behavior, not implementation details.
+- Tests are the spec; the code adapts to the tests, never the reverse. A red test means fix the code. Never weaken, delete, or skip a failing test to get green — change a test only when the requirement itself changed, deliberately and stated in the summary.
+- Fix bugs test-first: write the failing test that asserts the correct behavior, then fix the code until it passes; the test stays as the regression guard. Never encode buggy output into a test to make it pass.
 - Re-read your own diff before finishing; remove debug prints and unused imports.
+- Docs are code: update every doc that mentions the behavior you changed, and delete passages describing removed logic, in the same commit. A stale doc is a bug.
 - Update CHANGELOG.md `[Unreleased]` for user-visible changes.
 
 **Honesty**

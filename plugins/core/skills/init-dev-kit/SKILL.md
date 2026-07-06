@@ -70,13 +70,23 @@ untrack, or bulk reformat** — this can touch many files. Work in order.
    append any missing ignore patterns to `.gitignore`. **NEVER move source code,
    entry points, or tool-mandated config.**
 
-4. Format (confirm first — this can rewrite many files; skip a tool silently if
+4. Docs freshness sweep — treat stale docs as bugs:
+   - Read `README.md` and every file under `docs/` (including
+     `docs/plans/PLAN.md` / `TASKS.md`) and check each claim against the
+     actual code: commands, paths, endpoints, flags, behaviors.
+   - Propose per file: **update** (stale claim), **delete** (describes
+     removed logic), or **archive** (finished/superseded plans →
+     `docs/plans/archive/`). Show the table, act only after I approve.
+   - This is the same audit `/core:docs-sync` runs standalone — use it for
+     the mechanics.
+
+5. Format (confirm first — this can rewrite many files; skip a tool silently if
    it isn't installed):
    - Web / Markdown / JSON / YAML: `npx --no-install prettier --write --ignore-unknown .`
    - Python (if this is a Python project): `ruff format .` when ruff is available,
      otherwise `black .`.
 
-5. Wrap up:
+6. Wrap up:
    - Add a `CHANGELOG.md` entry under `[Unreleased]` noting the dev-kit init.
    - Summarize what you created, moved, untracked, deleted, and formatted.
    - Do NOT commit — leave everything staged for my review.

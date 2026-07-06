@@ -19,4 +19,8 @@ echo ">> Installing companion: UI/UX Pro Max (design intelligence; needs Python 
 npm install -g ui-ux-pro-max-cli
 uipro init --ai claude --global
 
+echo ">> Setting up the status line (user scope: ~/.claude; needs jq to wire settings.json)"
+command -v jq >/dev/null 2>&1 || echo "   WARNING: jq not found - script installed, statusLine not wired"
+sh "$(dirname "$0")/plugins/core/statusline/setup.sh"
+
 echo ">> Done. Open any project, run 'claude', then try: /core:new-project"

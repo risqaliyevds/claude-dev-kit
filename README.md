@@ -14,6 +14,7 @@ My personal Claude Code setup, packaged as a **plugin marketplace**. Install it 
 | `/core:plan <task>` | skill (manual, runs on `best` alias) | Deep research + implementation plan on the strong model; code gets written only after you confirm |
 | `/core:announcement` | skill (manual only) | Drafts internal Telegram announcements in Uzbek in the house style — deadline explicit, clear action, purposeful emojis |
 | `/core:report-verify <file>` | skill (manual, + bundled script) | Extracts every hyperlink from a report (.docx/.html/.md/.txt), groups by domain, cross-checks against declared figures |
+| `/core:docs-sync` | skill (manual only) | Audits every doc against the current code: updates stale claims, deletes dead ones, archives finished plans |
 | `nlp` | skill (background) | NLP conventions: leakage-safe splits, uz/ru script handling, tokenizer fertility checks, metric-first evaluation |
 | `evals` | skill (background) | Eval-first harness for any LLM feature: cases.jsonl → runner → baseline → delta reporting |
 | `senior-engineer` | skill (background) | Engineering discipline applied to all code changes |
@@ -23,6 +24,8 @@ My personal Claude Code setup, packaged as a **plugin marketplace**. Install it 
 | `code-reviewer` | subagent | Reviews diffs for bugs, security, and maintainability |
 | `researcher` | subagent (`best` alias) | Heavy investigation in an isolated context; returns a concise brief instead of flooding your session |
 | auto-format | hook | Runs project-local Prettier on every file Claude writes/edits (no-op if absent) |
+| scaffold | hook | SessionStart: creates any missing standard project file in every git repo (create-if-missing; plugin repos skipped) |
+| status line | script + hook | Rate-limit status bar (model, context %, 5-hour 📊 and weekly 📅 usage with reset countdowns); installed at user scope by `install.sh` and self-healed every session by the SessionStart hook |
 
 ## Model routing
 
@@ -68,7 +71,7 @@ claude
 though: a `SessionStart` hook (`hooks/scaffold.sh`) **auto-creates any
 missing standard files** the first time you open Claude Code in a git repo:
 
-- Always: `CHANGELOG.md`, `CLAUDE.md`, `README.md`, `.gitignore`,
+- Always: `CHANGELOG.md`, `AGENTS.md`, `CLAUDE.md`, `README.md`, `.gitignore`,
   `.gitattributes`, `.editorconfig`, `.env.example`, `.claude/settings.json`
 - Node projects only (`package.json` present): `.nvmrc`
 - Python projects only (`pyproject.toml`/`setup.py`/`setup.cfg`/`requirements.txt`): `.python-version`
@@ -88,11 +91,36 @@ the `core` plugin there or remove the `SessionStart` hook.
 
 Edit skills, commit, push. No `version` field is set on purpose: every commit counts as a new version, so machines with marketplace auto-update enabled pick changes up automatically. Otherwise run `/plugin marketplace update dev-kit`.
 
+## Status line
+
+`plugins/core/statusline/statusline.py` renders
+`🧠 Model • CTX ████░ 40% 80k/200k • 📊 HL 12% ↻ 2h 10m • 📅 WL 85% ↻ 2d 3h`
+from the real rate-limit JSON Claude Code passes on stdin (v2.1.80+, Pro/Max).
+`setup.sh` installs it to `~/.claude/statusline.py` and wires `statusLine`
+into `~/.claude/settings.json` with `refreshInterval: 60`, so the reset
+countdowns tick even while the session is idle. It never touches a
+`statusLine` you configured yourself, but upgrades one it recognizes as its
+own — kit updates reach already-wired machines automatically.
+Wiring the settings requires `jq` (the hooks already depend on it); without
+`jq` the script is copied but `settings.json` is left alone — install jq and
+open one more session to finish.
+It runs from `install.sh` **and** from the SessionStart hook, so opening any
+session installs it and re-syncs it after kit updates. To customize it, edit
+the copy in this repo (edits to `~/.claude/statusline.py` are overwritten).
+
 ## Developing / testing changes locally
 
 ```bash
+sh tests/run.sh                      # full test suite (sh + python3, no deps)
+sh tests/mutants.sh                  # mutation audit: suite must kill each mutant
 claude --plugin-dir ./plugins/core   # load without installing
 claude plugin validate .             # check marketplace + plugin schemas
 ```
 
-Inside a session, `/reload-plugins` picks up edits without restarting.
+The suite covers the scaffold hook (throwaway git repos), statusline setup
+(sandboxed `$HOME`), the statusline renderer (including a golden test against
+the documented example payload), `extract_links.py`, plus JSON validity,
+shell syntax, shellcheck (when installed), docs-path freshness, and
+personalization guards. CI runs it on Ubuntu **and** macOS on every push,
+validates the plugin schemas headlessly, and re-runs the mutation catalog
+weekly. Inside a session, `/reload-plugins` picks up edits without restarting.

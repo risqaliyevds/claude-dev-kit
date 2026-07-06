@@ -20,6 +20,17 @@
 - Commits follow Conventional Commits (`feat: ...`, `fix: ...`).
 - Never read, print, or commit `.env` files or other secrets.
 - Prefer small, focused changes; run tests before declaring work done.
+- Docs are code: update or delete every doc that mentions a behavior you
+  change, in the same commit. A stale doc is a bug — delete outdated docs
+  rather than letting them mislead. Archive finished plans out of
+  `docs/plans/` so the active plan files only describe live work
+  (`/core:docs-sync` audits and fixes doc drift on demand).
+- Tests are the spec — the code adapts to the tests, never the reverse.
+  Assert desired behavior (the contract), not what the implementation happens
+  to do. If a behavior change is intentional, update the test first, then
+  make the code pass; never weaken, delete, or skip a failing test to get
+  green. Fix bugs test-first: add a failing test for the correct behavior,
+  fix the code until it passes, and keep the test as the regression guard.
 - Active plan and task list live in `docs/plans/PLAN.md` and
   `docs/plans/TASKS.md` — read them before starting and keep `TASKS.md` checked
   off as you go.

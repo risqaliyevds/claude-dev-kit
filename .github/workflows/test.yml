@@ -1,0 +1,42 @@
+name: test
+
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: "0 6 * * 1" # weekly mutation audit of the suite itself
+  workflow_dispatch:
+
+jobs:
+  test:
+    strategy:
+      matrix:
+        # macOS is where POSIX assumptions die (BSD tools, bash-as-sh).
+        # Both images preinstall git, python3, and jq; shellcheck ships only
+        # on Ubuntu, so the macOS leg installs it — the suite must never
+        # silently skip shellcheck in CI.
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - if: runner.os == 'macOS'
+        run: brew install shellcheck
+      - run: sh tests/run.sh
+
+  validate-plugin:
+    # `claude plugin validate` is a local schema check — no API key needed.
+    # Best-effort until proven stable headless, hence continue-on-error.
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - run: npm install -g @anthropic-ai/claude-code
+      - run: claude plugin validate .
+
+  mutants:
+    # One full suite run per catalog entry — too slow for every push.
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: sh tests/mutants.sh

@@ -4,6 +4,12 @@
 # (never overwrites). Templates are shared with the /core:new-project skill.
 set -u
 
+# User-scope status line: one session anywhere installs it (and re-syncs it
+# after kit updates). Runs before the git/plugin-repo gates on purpose.
+if [ -n "${CLAUDE_PLUGIN_ROOT:-}" ]; then
+  sh "$CLAUDE_PLUGIN_ROOT/statusline/setup.sh" 2>/dev/null || true
+fi
+
 git rev-parse --is-inside-work-tree >/dev/null 2>&1 || exit 0
 
 # Skip plugin/marketplace repos (like this kit itself) — they are not app

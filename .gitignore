@@ -8,3 +8,4 @@ Thumbs.db
 
 # Throwaway scratch output
 tmp/
+__pycache__/
