@@ -7,6 +7,21 @@ on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). This repo has no
 ## [Unreleased]
 
 ### Added
+- ECC companion (`ecc@ecc`, github.com/affaan-m/ECC): `install.sh` adds the
+  marketplace and installs the plugin at user scope with
+  `hook_profile=standard` (68 agents, 286 skills, `/ecc:*` commands, lifecycle
+  hooks). New `plugins/core/scripts/ecc-rules.sh` (+ `tests/test_ecc_rules.sh`)
+  copies ECC's always-loaded rule packs (`common`, `python`, `dart`; skips
+  `hooks.md`/`agents.md`, which describe ECC's manual install and contradict
+  bypass mode and the kit's no-unrequested-subagents rule) to
+  `~/.claude/rules/ecc/` and generates `00-precedence.md` so Ponytail's ladder
+  wins over ECC coding-style on breadth. Measured cost: ~16k extra
+  system-prompt tokens per session. Never enable `ecc@ecc` at project scope.
+- Status line `🔮 WLF` segment: weekly Fable-model usage % with reset countdown.
+  Claude Code does not pass the per-model window on stdin, so the script
+  fetches `/api/oauth/usage` with the local OAuth token (2-minute cache in
+  `~/.claude/statusline-cache/fable.json`, stale cache on network failure,
+  `—` without a token). Tests sandbox it via `CLAUDE_CONFIG_DIR`.
 - `/core:docs-sync` skill + "docs are code" convention (kit `AGENTS.md`,
   shipped `AGENTS.md` template, `senior-engineer` skill, and a new docs
   freshness sweep step in `/core:init-dev-kit`): stale docs are bugs — update
@@ -17,15 +32,13 @@ on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). This repo has no
   (always in CI), CI matrix now covers Ubuntu **and** macOS, `claude plugin
   validate` runs headlessly in CI, a golden contract test renders the
   documented example statusline payload into an exact expected line, and the
-  mutation audit is automated as `tests/mutants.sh` (8-mutant catalog, all
+  mutation audit is automated as `tests/mutants.sh` (mutant catalog, all
   killed; CI re-runs it weekly).
 - Status line polish: `refreshInterval: 60` keeps reset countdowns live while
   idle; `setup.sh` now upgrades a statusLine it recognizes as its own (kit
-  updates reach wired machines) while still never touching a custom one;
-  context tokens prefer the documented `total_input_tokens`/
-  `total_output_tokens` fields (v2.1.132+) with `current_usage` fallback.
+  updates reach wired machines) while still never touching a custom one.
 - Status line: `plugins/core/statusline/statusline.py` (model + context % +
-  5-hour/weekly rate-limit bars with reset countdowns) and `setup.sh`, which
+  5-hour/weekly rate-limit usage with reset countdowns) and `setup.sh`, which
   installs it at user scope (`~/.claude`). Wired into `install.sh` and the
   SessionStart scaffold hook, so both install and any session fully set up the
   status bar; existing `statusLine` settings are never overwritten, and the
@@ -43,7 +56,7 @@ on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). This repo has no
   for the statusline renderer and `extract_links.py`, plus JSON-validity,
   shell-syntax, and personalization guards. No dependencies beyond
   git/sh/python3 (jq recommended). Assertions pin exact user-visible
-  contracts (template content, gauge width/proportion, ANSI palette,
+  contracts (template content, ANSI palette,
   stack-gating absence, domain-count semantics) — hardened via a mutation
   audit in which every surviving mutant became a stronger assertion.
 - `/core:init-dev-kit` skill — onboards an existing repo: pulls the latest kit,
@@ -77,6 +90,25 @@ on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). This repo has no
   Windows/autocrlf checkouts.
 
 ### Fixed
+- Dogfooding: the kit's own `.gitignore` now ignores `agentdb.*`/`*.rvf`
+  tooling artifacts like the template it ships (they had appeared in the root).
+- Status line missing on some machines (Windows) — two root causes, both
+  self-healing now. (1) `python3`/`python` on Windows resolve to the Microsoft
+  Store stub (no stdout, exit 49), so the wired command silently rendered
+  nothing; `setup.sh` now probes `python3`, `python`, `py -3`, then `uv python
+  find` by actually running them, wires the first that works as an absolute
+  forward-slash path, and verifies the final command renders before writing
+  it. The script path is absolute too: `~` is only expanded by Git Bash, and
+  Claude Code may run the status line through PowerShell/cmd.exe on Windows,
+  where python then fails to open `~/.claude/statusline.py`. (2) The renderer crashed with `UnicodeEncodeError` whenever stdout was a
+  pipe under a non-UTF-8 code page (cp1251/cp1252) — it now forces UTF-8
+  stdout. Any statusLine whose command runs `statusline.py` (legacy
+  `python3 ~/...`, hand-edited absolute paths) is recognized as ours and
+  repaired each session; when no interpreter works, nothing is wired (a
+  broken statusLine also hides the footer hints) and one diagnostic line is
+  printed into the session. `setup.sh --check` is a read-only health report
+  (exit 1 when broken). `tests/run.sh` uses the same interpreter probe so the
+  suite runs on Windows too.
 - Doc-vs-code audit fallout (all four caught by the new docs-are-code sweep):
   `setup.sh` treated a present-but-command-less custom statusLine (static or
   string-shaped) as absent and overwrote it every session — now any present
@@ -97,6 +129,8 @@ on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). This repo has no
   required file (previously missing).
 
 ### Changed
+- Status line shows plain colored percentages (`CTX: 14% (200k)` — percentage plus window size) instead of
+  10-cell gauges — shorter line, same traffic-light colors and countdowns.
 - Personalized marketplace/plugin metadata and install references
   (`risqaliyevds` / `Murod`).
 - Marketplace description and README command table now list the new skills.

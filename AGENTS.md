@@ -17,12 +17,19 @@ available in every project.
   - `hooks/hooks.json` — prettier auto-format (PostToolUse) and the
     `scaffold.sh` auto-bootstrap (SessionStart).
   - `statusline/` — `statusline.py` (rate-limit/context status line) and
-    `setup.sh`, which installs it at user scope (`~/.claude`). Called by both
-    `install.sh` and the SessionStart hook, so it self-heals every session.
+    `setup.sh`, which installs it at user scope (`~/.claude`), probing for
+    an interpreter that actually runs and verifying the wired command
+    renders (`--check` = read-only report). Called by both `install.sh` and
+    the SessionStart hook, so it self-heals every session.
   - `skills/new-project/templates/` — templates shared by the `new-project`
     skill **and** the `scaffold.sh` hook. Edit them in one place.
-- `install.sh` — one-time machine setup (adds marketplace, installs `core` +
-  Ponytail + UI/UX Pro Max companions, sets up the status line).
+  - `scripts/ecc-rules.sh` — copies ECC's always-loaded rule packs
+    (`common` + `python` + `dart`, minus the two install-mode-specific files)
+    to `~/.claude/rules/ecc/` and writes the Ponytail-precedence rule.
+    Plugins cannot ship rules, so this runs from `install.sh`.
+- `install.sh` — one-time machine setup (adds marketplaces, installs `core` +
+  Ponytail + UI/UX Pro Max + ECC (`ecc@ecc`, user scope only, standard hook
+  profile) companions, installs ECC rules, sets up the status line).
 - `tests/` — dependency-free test suite (`sh tests/run.sh`); CI runs it on
   Ubuntu **and** macOS on every push (`.github/workflows/test.yml`), plus a
   weekly `tests/mutants.sh` mutation audit that proves the suite still kills

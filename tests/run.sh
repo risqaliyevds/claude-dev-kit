@@ -4,6 +4,14 @@
 set -u
 cd "$(dirname "$0")/.." || exit 1
 
+# Same interpreter probe as statusline/setup.sh: on Windows `python3` may be
+# the Microsoft Store stub (no stdout, exit 49), so pick one that actually runs.
+PY=python3
+for c in python3 python "py -3"; do
+  # shellcheck disable=SC2086 # word-splitting `py -3` is the point
+  if exe=$($c -c "import sys; print(sys.executable)" 2>/dev/null) && [ -n "$exe" ]; then PY=$exe; break; fi
+done
+
 FAIL=0
 check() { # check <description> <command...>
   desc=$1
@@ -28,7 +36,7 @@ set -f
 
 # Static: every JSON file parses.
 for f in $(files '*.json'); do
-  check "json parses: $f" python3 -m json.tool "$f"
+  check "json parses: $f" "$PY" -m json.tool "$f"
 done
 
 # Static: every shell script has valid syntax.
@@ -60,7 +68,7 @@ check "personalization intact" sh -c '
 
 # Behavior suites.
 for t in tests/test_*.sh; do check "$t" sh "$t"; done
-for t in tests/test_*.py; do check "$t" python3 "$t"; done
+for t in tests/test_*.py; do check "$t" "$PY" "$t"; done
 
 if [ "$FAIL" -eq 0 ]; then echo "ALL PASS"; else echo "FAILURES"; fi
 exit "$FAIL"

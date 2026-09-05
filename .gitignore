@@ -1,6 +1,9 @@
-# Ruflo / local tooling artifacts
+# Ruflo / local tooling artifacts (same set the gitignore template ships)
 ruvector.db
 *.db
+agentdb.*
+*.rvf
+*.rvf.lock
 
 # OS / editor
 .DS_Store

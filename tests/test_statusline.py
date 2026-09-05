@@ -2,9 +2,11 @@
 """Unit + end-to-end tests for plugins/core/statusline/statusline.py."""
 import importlib.util
 import json
+import os
 import pathlib
 import subprocess
 import sys
+import tempfile
 import unittest
 
 sys.dont_write_bytecode = True  # keep __pycache__ out of the plugin tree
@@ -15,9 +17,14 @@ sl = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(sl)
 
 
-def run(stdin: str):
+def run(stdin: str, config_dir=None):
+    # CLAUDE_CONFIG_DIR points the WLF lookup at an empty sandbox: no
+    # credentials -> no network -> deterministic "—", exactly like a machine
+    # without a claude.ai login (or a Keychain-only macOS).
+    env = dict(os.environ, CLAUDE_CONFIG_DIR=config_dir or tempfile.mkdtemp())
     return subprocess.run(
-        [sys.executable, str(SCRIPT)], input=stdin, capture_output=True, text=True, timeout=10
+        [sys.executable, str(SCRIPT)], input=stdin, capture_output=True, encoding="utf-8",
+        timeout=10, env=env,
     )
 
 
@@ -32,23 +39,12 @@ class TestHelpers(unittest.TestCase):
         self.assertEqual(sl.color_for(100), sl.RED)
 
     def test_contract_constants(self):
-        # The gauge is exactly 10 cells and the palette is the ANSI
-        # green/yellow/red traffic light — user-visible contract, not
-        # implementation detail: changing either must fail this suite.
-        self.assertEqual(sl.BARS, 10)
+        # The palette is the ANSI green/yellow/red traffic light — user-visible
+        # contract, not implementation detail: changing it must fail this suite.
         self.assertEqual(
             (sl.GREEN, sl.YELLOW, sl.RED, sl.DIM),
             ("\033[32m", "\033[33m", "\033[31m", "\033[2m"),
         )
-
-    def test_bar_fill_and_clamping(self):
-        self.assertIn("░" * 10, sl.bar(0))
-        self.assertIn("█" * 10, sl.bar(100))
-        self.assertIn("█" * 10, sl.bar(250))  # clamped high
-        self.assertIn("░" * 10, sl.bar(-5))  # clamped low
-        self.assertIn("█" * 5 + "░" * 5, sl.bar(50))  # exactly proportional
-        self.assertIn("█" * 3 + "░" * 7, sl.bar(30))
-        self.assertEqual(sl.bar(None), sl.DIM + "─" * 10 + sl.RESET)
 
     def test_pctstr(self):
         self.assertEqual(sl.pctstr(None), "—")
@@ -82,6 +78,73 @@ class TestHelpers(unittest.TestCase):
         self.assertEqual(sl.tok(1_500_000), "1.5M")
 
 
+class TestFableWeekly(unittest.TestCase):
+    """WLF = the per-model weekly Fable window. Claude Code does not pass it on
+    stdin, so the script fetches /api/oauth/usage itself (OAuth token from the
+    credentials file) and caches the answer."""
+
+    USAGE = {
+        "limits": [
+            {"kind": "weekly_all", "percent": 5, "resets_at": "2026-09-10T21:59:59+00:00", "scope": None},
+            {"kind": "weekly_scoped", "percent": 7, "resets_at": "2026-09-10T21:59:59+00:00",
+             "scope": {"model": {"display_name": "Fable"}}},
+        ]
+    }
+
+    def setUp(self):
+        self.dir = pathlib.Path(tempfile.mkdtemp())
+        self.cache = self.dir / "statusline-cache" / "fable.json"
+
+    def creds(self):
+        (self.dir / ".credentials.json").write_text(
+            json.dumps({"claudeAiOauth": {"accessToken": "tok"}}), encoding="utf-8"
+        )
+
+    def test_extracts_fable_window(self):
+        pct, reset = sl.fable_window(self.USAGE)
+        self.assertEqual(pct, 7.0)
+        self.assertAlmostEqual(reset, 1789077599, delta=1)  # 2026-09-10T21:59:59Z
+
+    def test_absent_window_is_none(self):
+        self.assertEqual(sl.fable_window({"limits": []}), (None, None))
+        self.assertEqual(sl.fable_window({}), (None, None))
+        self.assertEqual(sl.fable_window("garbage"), (None, None))
+
+    def test_no_credentials_no_fetch(self):
+        calls = []
+        pct, _ = sl.fable_weekly(self.dir, fetch=lambda tok: calls.append(tok) or self.USAGE)
+        self.assertIsNone(pct)
+        self.assertEqual(calls, [])  # never hits the network without a token
+
+    def test_fetch_and_cache(self):
+        self.creds()
+        calls = []
+        fetch = lambda tok: calls.append(tok) or self.USAGE
+        self.assertEqual(sl.fable_weekly(self.dir, fetch=fetch)[0], 7.0)
+        self.assertEqual(calls, ["tok"])
+        self.assertTrue(self.cache.exists())
+        # Second call within the TTL is served from cache: one fetch total.
+        self.assertEqual(sl.fable_weekly(self.dir, fetch=fetch)[0], 7.0)
+        self.assertEqual(calls, ["tok"])
+
+    def test_stale_cache_survives_fetch_failure(self):
+        self.creds()
+        sl.fable_weekly(self.dir, fetch=lambda tok: self.USAGE)
+        os.utime(self.cache, (1, 1))  # expire it
+
+        def boom(tok):
+            raise OSError("network down")
+
+        self.assertEqual(sl.fable_weekly(self.dir, fetch=boom)[0], 7.0)  # stale beats blank
+
+    def test_e2e_renders_wlf_from_cache(self):
+        self.cache.parent.mkdir(parents=True)
+        self.cache.write_text(json.dumps(self.USAGE), encoding="utf-8")
+        r = run("{}", config_dir=str(self.dir))
+        self.assertEqual(r.returncode, 0)
+        self.assertIn("WLF: \033[32m7%\033[0m", r.stdout)
+
+
 class TestEndToEnd(unittest.TestCase):
     def test_full_payload(self):
         far_future = 4_000_000_000  # any run date: still in the future
@@ -99,7 +162,7 @@ class TestEndToEnd(unittest.TestCase):
         }
         r = run(json.dumps(payload))
         self.assertEqual(r.returncode, 0)
-        for piece in ["Fable 5", "12%", "85%", "80k/200k", "↻", "📊", "📅", "CTX"]:
+        for piece in ["Fable 5", "12%", "85%", "(200k)", "↻", "📊", "📅", "CTX"]:
             self.assertIn(piece, r.stdout)
         self.assertIn("\033[32m", r.stdout)  # 12% renders green...
         self.assertIn("\033[31m", r.stdout)  # ...and 85% renders red, end to end
@@ -126,6 +189,7 @@ class TestEndToEnd(unittest.TestCase):
             self.assertEqual(r.returncode, 0, f"crashed on stdin={stdin!r}\n{r.stderr}")
             self.assertIn("🧠 Model: Claude", r.stdout)
             self.assertIn("—", r.stdout)  # em-dash fallback for absent data
+            self.assertNotIn("█", r.stdout)  # plain percentages, no gauges
 
     def test_string_numbers_still_render(self):
         r = run('{"rate_limits": {"five_hour": {"used_percentage": "45"}}}')
@@ -141,9 +205,10 @@ class TestEndToEnd(unittest.TestCase):
         G, X = "\033[32m", "\033[0m"
         expected = (
             "🧠 Model: Sonnet 5 • "
-            f"CTX: {G}█░░░░░░░░░{X} {G}8%{X} 17k/200k • "
-            f"📊 HL: {G}██░░░░░░░░{X} {G}24%{X} ↻ now • "
-            f"📅 WL: {G}████░░░░░░{X} {G}41%{X} ↻ now"
+            f"CTX: {G}8%{X} (200k) • "
+            f"📊 HL: {G}24%{X} ↻ now • "
+            f"📅 WL: {G}41%{X} ↻ now • "
+            "🔮 WLF: —"
         )
         self.assertEqual(r.returncode, 0)
         self.assertEqual(r.stdout.strip(), expected)

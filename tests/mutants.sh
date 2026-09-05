@@ -47,15 +47,15 @@ mutant ".python-version leaks into Node-only repos" \
 
 mutant "setup.sh clobbers a user's custom statusLine" \
   plugins/core/statusline/setup.sh \
-  's@\[ "$cur" = "$OURS" \] || exit 0@true@'
+  's@\*statusline.py\*) ;; \*) exit 0 ;;@*) ;;@'
 
-mutant "status bar loses proportionality (over-filled bar)" \
-  plugins/core/statusline/statusline.py \
-  's|fill = int(round(pct / 100.0 \* BARS))|fill = min(BARS, int(round(pct / 100.0 * BARS)) + 2)|'
+mutant "setup.sh wires a statusLine command that does not render" \
+  plugins/core/statusline/setup.sh \
+  's@^renders "$CMD" ||@true ||@'
 
-mutant "gauge width changes from the 10-cell contract" \
-  plugins/core/statusline/statusline.py \
-  's|^BARS = 10|BARS = 20|'
+mutant "ecc-rules copies the install-mode-specific hooks.md/agents.md" \
+  plugins/core/scripts/ecc-rules.sh \
+  's/^SKIP=.*/SKIP=""/'
 
 mutant "healthy usage renders blue instead of green" \
   plugins/core/statusline/statusline.py \
