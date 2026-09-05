@@ -40,6 +40,10 @@ available in every project.
 
 - No `version` field: every commit to `main` is the new version, so keep
   `main` releasable.
+- One plugin, one scope: `core@dev-kit` (and `ecc@ecc`) live at user scope
+  only. Never put `enabledPlugins` for them into a project `settings.json` or
+  the shipped template — a project-scope copy pins an old version and its
+  hooks fight the user-scope ones.
 - Keep `CHANGELOG.md` current under `[Unreleased]` after any user-visible
   change (the `changelog` skill knows the format).
 - Conventional Commits (`feat:`, `fix:`, `chore:`); use `/core:commit`.

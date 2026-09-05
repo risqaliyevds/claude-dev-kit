@@ -90,6 +90,13 @@ on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). This repo has no
   Windows/autocrlf checkouts.
 
 ### Fixed
+- Status line kept disappearing because the shipped project `settings.json`
+  template enabled `core@dev-kit` per project: with the user-scope install
+  present, each project got its own copy pinned at whatever version was
+  current when first opened, and that stale copy's SessionStart hook
+  overwrote `~/.claude/statusline.py` with the old broken renderer. The
+  template now only declares the marketplace; the plugin is installed once at
+  user scope by `install.sh`. One plugin, one scope.
 - Dogfooding: the kit's own `.gitignore` now ignores `agentdb.*`/`*.rvf`
   tooling artifacts like the template it ships (they had appeared in the root).
 - Status line missing on some machines (Windows) — two root causes, both

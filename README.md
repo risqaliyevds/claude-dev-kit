@@ -58,7 +58,7 @@ or manually, inside Claude Code:
 /plugin install core@dev-kit
 ```
 
-Installing at **user scope** (the default) makes it available in all your projects.
+Installing at **user scope** (the default) makes it available in all your projects. Keep it there and nowhere else: the project `settings.json` template only declares the marketplace on purpose. A second, project-scope copy pins its own version and its stale SessionStart hook fights the user-scope one (that is how the status line kept vanishing). `claude plugin list` should show `core@dev-kit` exactly once.
 
 ## Starting a new project
 

@@ -7,9 +7,6 @@
       }
     }
   },
-  "enabledPlugins": {
-    "core@dev-kit": true
-  },
   "model": "opusplan",
   "advisorModel": "opus"
 }
