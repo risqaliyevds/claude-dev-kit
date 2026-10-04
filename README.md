@@ -370,7 +370,7 @@ headlessly, and re-runs the mutation catalog weekly. Inside a session,
 | Symptom | Cause | Fix |
 |---|---|---|
 | Status line blank on Windows | `python3` is the Microsoft Store stub, or the wired command uses `~`/backslashes, or the renderer hit a cp125x code page | Run `sh plugins/core/statusline/setup.sh` (or open a new session); `--check` shows what is wired |
-| Status line keeps coming back broken | A second, project-scope copy of `core@dev-kit` pinned at an old version runs its stale hook | `claude plugin list`; inside that project `claude plugin uninstall core@dev-kit --scope project` and remove `enabledPlugins` from its `.claude/settings.json` |
+| Status line keeps coming back broken, or a new segment (e.g. `💭 Effort`) vanishes again | A second, project-scope copy of `core@dev-kit` pinned at an old version runs its stale hook — or a session started before a kit update ran `/clear`/`/compact`, re-syncing its old script | `claude plugin list`; inside that project `claude plugin uninstall core@dev-kit --scope project --keep-data` and commit its `.claude/settings.json`; after any kit update, restart every open session (don't clear/compact the old ones) |
 | `WLF: —` | No OAuth token in `~/.claude/.credentials.json` (API-key login, macOS Keychain) | Expected; the other segments still render |
 | ECC blocks the first edit of a file | The standard-profile fact-forcing gate | State importers/schemas as asked, or `ECC_GATEGUARD=off` / `hook_profile=minimal` |
 | `/plugin install core@dev-kit` says already installed globally | It is — user scope covers every project | Nothing to do |
