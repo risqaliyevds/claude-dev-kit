@@ -3,7 +3,7 @@ name: plan
 description: Deep planning and research before implementation - produce an implementation plan without writing code.
 disable-model-invocation: true
 argument-hint: "[what to plan]"
-model: best
+model: opus
 ---
 
 Plan this task: $ARGUMENTS
@@ -23,7 +23,7 @@ You are in planning mode — research and design only. Do NOT write implementati
    - Write the full plan to `docs/plans/PLAN.md` (overwrite it — it holds the *current* plan; if an unfinished `PLAN.md` already exists, tell me before replacing it).
    - Write a `docs/plans/TASKS.md` checklist derived from the ordered steps, one `- [ ]` item per step, grouped under a `## <task title>` heading. This is the durable to-do list — you tick items off (`- [x]`) as you implement, so progress is visible in git and recoverable after a context reset.
    - Do NOT commit these automatically; leave them in the working tree for me to review.
-6. End by asking me to confirm the plan. Implementation happens after confirmation (typically on the faster execution model). During implementation, keep `TASKS.md` current: check off each item as it lands.
+6. End by asking me to confirm the plan. Implementation happens after confirmation (on Sonnet 5.5 under the kit's `opusplan` routing). During implementation, keep `TASKS.md` current: check off each item as it lands.
 
 Keep the plan tight enough that a mid-level engineer — or a smaller model — could execute it without asking questions.
 

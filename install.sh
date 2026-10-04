@@ -19,7 +19,7 @@ echo ">> Installing companion: UI/UX Pro Max (design intelligence; needs Python 
 npm install -g ui-ux-pro-max-cli
 uipro init --ai claude --global
 
-echo ">> Installing companion: ECC (agent harness: 68 agents, 286 skills, hooks; needs Node 18+)"
+echo ">> Installing companion: ECC (agent harness: 68 agents, 293 skills, hooks; needs Node 18+)"
 # marketplace add fails when the marketplace already exists; that is fine.
 claude plugin marketplace add affaan-m/ECC || true
 # user scope only — never also enable ecc@ecc at project scope (ECC's setup
@@ -28,6 +28,9 @@ claude plugin install ecc@ecc --scope user \
   --config hooks_enabled=true --config hook_profile=standard
 echo ">> Installing ECC rule packs (plugins cannot ship rules) to ~/.claude/rules/ecc"
 sh "$(dirname "$0")/plugins/core/scripts/ecc-rules.sh"
+
+echo ">> Pinning model routing (Opus 5.5 everywhere, Sonnet 5.5 for coding) in ~/.claude/settings.json"
+sh "$(dirname "$0")/plugins/core/scripts/model-routing.sh" || echo "   WARNING: model routing not set (needs jq)"
 
 echo ">> Setting up the status line (user scope: ~/.claude; needs jq to wire settings.json)"
 command -v jq >/dev/null 2>&1 || echo "   WARNING: jq not found - script installed, statusLine not wired"

@@ -7,6 +7,13 @@ on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). This repo has no
 ## [Unreleased]
 
 ### Added
+- Model routing: Opus 5.5 for everything except coding, which runs on
+  Sonnet 5.5. New `plugins/core/scripts/model-routing.sh` (+
+  `tests/test_model_routing.sh`), run by `install.sh`, merges `model:
+  opusplan`, `advisorModel`, the `ANTHROPIC_DEFAULT_{OPUS,SONNET,HAIKU}_MODEL`
+  pins and `CLAUDE_CODE_SUBAGENT_MODEL` into `~/.claude/settings.json`,
+  keeping every other key. The generated `00-precedence.md` now states the
+  model policy, so re-running `ecc-rules.sh` no longer erases it.
 - ECC companion (`ecc@ecc`, github.com/affaan-m/ECC): `install.sh` adds the
   marketplace and installs the plugin at user scope with
   `hook_profile=standard` (68 agents, 286 skills, `/ecc:*` commands, lifecycle

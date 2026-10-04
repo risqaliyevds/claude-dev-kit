@@ -57,6 +57,10 @@ mutant "ecc-rules copies the install-mode-specific hooks.md/agents.md" \
   plugins/core/scripts/ecc-rules.sh \
   's/^SKIP=.*/SKIP=""/'
 
+mutant "model-routing wipes the user's other env vars" \
+  plugins/core/scripts/model-routing.sh \
+  's|((.env // {}) +|({} +|'
+
 mutant "healthy usage renders blue instead of green" \
   plugins/core/statusline/statusline.py \
   's|\\033\[32m|\\033[34m|'

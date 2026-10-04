@@ -29,12 +29,12 @@ Inventory of everything enabled on a machine after `./install.sh`
 
 | Plugin | Skills | Agents | Commands | Hooks | Role |
 |---|---|---|---|---|---|
-| `ecc@ecc` | 286 | 68 | 94 | 23 | Agent harness: planners, reviewers, TDD, session memory, lifecycle hooks |
+| `ecc@ecc` | 293 | 68 | 94 | 24 | Agent harness: planners, reviewers, TDD, session memory, lifecycle hooks |
 | `core@dev-kit` | 15 | 2 | 0 | 2 | This kit: house conventions, scaffolding, changelog/commit/release flow |
 | `ponytail@ponytail` | 6 | 0 | 0 | 0 | Anti-over-engineering discipline (YAGNI ladder) |
 | `figma@claude-plugins-official` | 14 | 0 | 0 | 0 | Figma design-to-code (optional, not installed by `install.sh`) |
-| ruflo (34 plugins) | 104 | 45 | 40 | 7 | Swarm/memory/observability tooling (optional, not installed by `install.sh`) |
-| **Total** | **425** | **115** | **134** | **32** | |
+| ruflo (33 plugins) | 126 | 55 | 47 | 8 | Swarm/memory/observability tooling (optional, not installed by `install.sh`) |
+| **Total** | **454** | **125** | **141** | **34** | |
 
 Outside plugins, the kit also lays down: 18 ECC rule files in
 `~/.claude/rules/ecc/` (always loaded), the status line script in
@@ -53,6 +53,7 @@ install.sh (once per machine)
 ├─ marketplace ponytail → plugin ponytail@ponytail (user scope)
 ├─ marketplace ecc      → plugin ecc@ecc           (user scope, hook_profile=standard)
 ├─ ecc-rules.sh         → ~/.claude/rules/ecc/     (common + python + dart, + precedence rule)
+├─ model-routing.sh     → ~/.claude/settings.json  (Opus 5.5 everywhere, Sonnet 5.5 codes)
 ├─ uipro init --global  → UI/UX Pro Max skill
 └─ statusline/setup.sh  → ~/.claude/statusline.py + settings.statusLine
 
@@ -69,7 +70,8 @@ Layering of instructions inside a session, highest priority first:
 
 1. Project `AGENTS.md` / `CLAUDE.md` (scaffolded by the kit, edited by you)
 2. `~/.claude/rules/ecc/00-precedence.md` — Ponytail's ladder wins over ECC
-   coding-style on file count, abstraction and error-handling breadth
+   coding-style on file count, abstraction and error-handling breadth; the
+   model policy wins over ECC/ruflo model-tier hints
 3. ECC rule packs (security, testing, git workflow, patterns, performance)
 4. Background skills from `core` (`senior-engineer`, `ai-engineer`, `fastapi`,
    `flutter`, `nlp`, `evals`) — loaded when relevant
@@ -163,7 +165,7 @@ formats — one consolidated plan, confirmed before anything moves.
 | `/core:release <version>` | skill (manual only) | Moves `[Unreleased]` under a version heading, bumps version, commits, tags |
 | `/core:commit` | skill (manual only) | Conventional Commits workflow; checks the changelog first |
 | `/core:new-project` | skill (manual only) | Bootstraps CHANGELOG.md, CLAUDE.md, `.claude/settings.json`, `.gitignore` in a fresh repo |
-| `/core:plan <task>` | skill (manual, runs on `best` alias) | Deep research + implementation plan on the strong model; code gets written only after you confirm |
+| `/core:plan <task>` | skill (manual, runs on Opus 5.5) | Deep research + implementation plan on the strong model; code gets written only after you confirm |
 | `/core:announcement` | skill (manual only) | Drafts internal Telegram announcements in Uzbek in the house style — deadline explicit, clear action, purposeful emojis |
 | `/core:report-verify <file>` | skill (manual, + bundled script) | Extracts every hyperlink from a report (.docx/.html/.md/.txt), groups by domain, cross-checks against declared figures |
 | `/core:docs-sync` | skill (manual only) | Audits every doc against the current code: updates stale claims, deletes dead ones, archives finished plans |
@@ -173,12 +175,13 @@ formats — one consolidated plan, confirmed before anything moves.
 | `ai-engineer` | skill (background) | Conventions for LLM/agent code (keys, retries, structured output, evals) |
 | `fastapi` | skill (background) | FastAPI/Python backend rules: async SQLAlchemy 2.x, Pydantic v2, layered architecture |
 | `flutter` | skill (background) | Flutter/Dart rules: Material 3, one state-management approach, go_router, widget/golden tests |
-| `code-reviewer` | subagent | Reviews diffs for bugs, security, and maintainability |
-| `researcher` | subagent (`best` alias) | Heavy investigation in an isolated context; returns a concise brief instead of flooding your session |
+| `code-reviewer` | subagent (Opus 5.5) | Reviews diffs for bugs, security, and maintainability |
+| `researcher` | subagent (Opus 5.5) | Heavy investigation in an isolated context; returns a concise brief instead of flooding your session |
 | auto-format | hook | Runs project-local Prettier on every file Claude writes/edits (no-op if absent) |
 | scaffold | hook | SessionStart: creates any missing standard project file in every git repo (create-if-missing; plugin repos skipped) |
 | status line | script + hook | Rate-limit status line (model, context %, 5-hour 📊, weekly 📅 and weekly-Fable 🔮 usage % with reset countdowns; plain numbers, no gauges); installed at user scope by `install.sh` and self-healed every session by the SessionStart hook |
-| ECC rules installer | script | `plugins/core/scripts/ecc-rules.sh` copies ECC's always-loaded rule packs to `~/.claude/rules/ecc/` and writes the Ponytail-precedence rule |
+| ECC rules installer | script | `plugins/core/scripts/ecc-rules.sh` copies ECC's always-loaded rule packs to `~/.claude/rules/ecc/` and writes the precedence rule (Ponytail ladder + model policy) |
+| model routing | script | `plugins/core/scripts/model-routing.sh` pins Opus 5.5 for everything except coding (Sonnet 5.5) in `~/.claude/settings.json`; run by `install.sh` |
 
 Conventions the kit ships to every project (see the `AGENTS.md` template):
 `AGENTS.md` holds the shared, tool-agnostic context and `CLAUDE.md` only
@@ -192,7 +195,7 @@ tests are the spec; docs are code.
 
 [ECC](https://github.com/affaan-m/ECC) (`ecc@ecc`, MIT) is the agent-harness
 layer: 68 agents (planner, architect, security-reviewer, tdd-guide, language
-reviewers), 286 on-demand skills, `/ecc:*` commands (`/ecc:plan`,
+reviewers), 293 on-demand skills, `/ecc:*` commands (`/ecc:plan`,
 `/ecc:code-review`, `/ecc:harness-audit`, plus the `tdd-workflow` skill), and
 lifecycle hooks (session memory under `~/.claude/sessions/`, pre-compact
 state saving, pattern extraction, config protection, a fact-forcing gate on
@@ -242,24 +245,33 @@ before writing UI code, so this kit no longer ships a `ui-ux` skill.
 
 ## Model routing
 
-All four models, each in its lane (ships in the project settings template):
+**Opus 5.5 for everything except coding, which runs on Sonnet 5.5.**
+`install.sh` pins it at user scope with `plugins/core/scripts/model-routing.sh`
+(merges into `~/.claude/settings.json`, keeps every other key); the project
+template carries the same routing as aliases (`opusplan` / `opus`).
 
-- `"model": "opusplan"` — **Opus 4.8 plans** (Plan Mode), **Sonnet 5 codes**
-  (execution switches automatically; Sonnet 5 runs a native 1M-token context
-  window)
-- `"advisorModel": "opus"` — while coding, Sonnet 5 consults **Opus 4.8**
-  mid-task when it decides it needs deeper reasoning
-- `/core:plan` and the `researcher` agent run on the `best` alias —
-  **Fable 5** where your org has access, otherwise Opus 4.8
-- `/model fable` — put an entire hard, long-running task on **Fable 5**; when
-  its safety classifiers flag a request (mostly cyber/bio content), Claude
-  Code automatically re-runs it on **Opus 4.8** and continues there
+| Who | Model | Set by |
+|---|---|---|
+| Main thread in Plan Mode | **Opus 5.5** | `"model": "opusplan"` |
+| Main thread executing — coding | **Sonnet 5.5** | `"model": "opusplan"` |
+| Advisor (Sonnet consults it mid-task) | **Opus 5.5** | `advisorModel` |
+| `/core:plan`, `researcher`, `code-reviewer` | **Opus 5.5** | `model: opus` frontmatter |
+| Every other subagent (ECC, ruflo, workflows) — even one whose frontmatter says `sonnet` | **Opus 5.5** | `CLAUDE_CODE_SUBAGENT_MODEL` |
+| Anything asking for the `haiku` alias | **Opus 5.5** | `ANTHROPIC_DEFAULT_HAIKU_MODEL` |
 
-Requires Claude Code v2.1.197+ (`claude update`). `/model opusplan` returns
-to the hybrid; `/effort` tunes reasoning depth; typing `ultrathink` in any
-prompt requests one-off deeper reasoning. Do NOT remap
-`ANTHROPIC_DEFAULT_OPUS_MODEL` to Fable — that breaks Fable's automatic Opus
-fallback.
+`ANTHROPIC_DEFAULT_OPUS_MODEL` / `_SONNET_MODEL` pin the aliases to
+`claude-opus-5-5` / `claude-sonnet-5-5`, so the template's aliases and any
+`model: opus` agent resolve to 5.5. The same policy is stated to the model in
+`~/.claude/rules/ecc/00-precedence.md`, so ECC/ruflo tier hints never pick a
+cheaper model.
+
+`opusplan` uses Opus only while the session is in Plan Mode — every other
+main-thread turn (questions, reviews, git) runs on Sonnet. For a mostly
+non-coding session, `/model opus`; `/model opusplan` returns to the hybrid.
+`/model fable` puts one hard, long-running task on **Fable 5.1** (Claude Code
+re-runs a classifier-flagged request on Opus and continues there — so never
+remap `ANTHROPIC_DEFAULT_OPUS_MODEL` to Fable). `/effort` tunes reasoning
+depth; `ultrathink` in a prompt requests one-off deeper reasoning.
 
 ## Status line
 
@@ -354,4 +366,4 @@ headlessly, and re-runs the mutation catalog weekly. Inside a session,
 | `WLF: —` | No OAuth token in `~/.claude/.credentials.json` (API-key login, macOS Keychain) | Expected; the other segments still render |
 | ECC blocks the first edit of a file | The standard-profile fact-forcing gate | State importers/schemas as asked, or `ECC_GATEGUARD=off` / `hook_profile=minimal` |
 | `/plugin install core@dev-kit` says already installed globally | It is — user scope covers every project | Nothing to do |
-| Context window feels small | 425 skills across plugins each cost description tokens | Disable plugin families you do not use (ruflo first); `claude plugin details <plugin>` shows projected cost |
+| Context window feels small | 454 skills across plugins each cost description tokens | Disable plugin families you do not use (ruflo first); `claude plugin details <plugin>` shows projected cost |

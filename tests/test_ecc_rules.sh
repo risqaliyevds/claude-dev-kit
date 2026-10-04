@@ -29,6 +29,11 @@ for skip in common/hooks.md common/agents.md web/coding-style.md; do
   [ ! -f "$DST/$skip" ] || { echo "should not have copied $skip"; exit 1; }
 done
 grep -q "Ponytail" "$DST/00-precedence.md" || { echo "precedence rule lacks Ponytail clause"; exit 1; }
+# Model policy: Opus 5.5 everywhere except coding (Sonnet 5.5), never Haiku.
+# It must live in the generated file, or every re-run of the script erases it.
+for want in "Model policy" "claude-opus-5-5" "claude-sonnet-5-5" "Never pick Haiku"; do
+  grep -q "$want" "$DST/00-precedence.md" || { echo "precedence rule lacks model policy: $want"; exit 1; }
+done
 
 # 2. Idempotent and refreshing: a changed upstream file is re-copied, and the
 #    tree is otherwise identical after a second run.

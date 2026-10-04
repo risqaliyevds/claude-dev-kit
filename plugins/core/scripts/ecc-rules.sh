@@ -47,6 +47,19 @@ When Ponytail is active, its ladder wins over ECC coding-style on file count,
 abstraction breadth, error-handling breadth, and immutability: write the
 shortest working diff. ECC rules on security, testing, git workflow, code
 review, and performance stand as written.
+
+## Model policy (overrides ECC performance.md "Model Selection", ruflo routing)
+
+Opus 5.5 (`claude-opus-5-5`) for everything except coding: Plan Mode,
+research, review, the advisor, every subagent and every workflow `agent()`
+call. Coding — the main thread outside Plan Mode under `opusplan` — runs on
+Sonnet 5.5 (`claude-sonnet-5-5`). Never pick Haiku or Fable for a worker, even
+when a rule, skill or `[INTELLIGENCE]`/routing hint suggests another tier; pass
+`model: "opus"` where a call takes a model. Enforced in
+`~/.claude/settings.json` by the kit's `model-routing.sh` (`model`,
+`advisorModel`, `CLAUDE_CODE_SUBAGENT_MODEL`, `ANTHROPIC_DEFAULT_*_MODEL`);
+`CLAUDE_CODE_SUBAGENT_MODEL` overrides an agent file's `model: sonnet`. For a
+session that is mostly non-coding, `/model opus` keeps the main thread on Opus.
 EOF
 
 echo "ecc-rules: installed $(find "$DST" -name '*.md' | wc -l | tr -d ' ') rule files to $DST"
