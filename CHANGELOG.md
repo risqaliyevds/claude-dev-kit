@@ -143,6 +143,9 @@ on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). This repo has no
   required file (previously missing).
 
 ### Changed
+- `/core:plan` and the `researcher` agent run on `model: opus` (was the `best`
+  alias); `code-reviewer` is pinned to `opus` (was `inherit`, which dropped it
+  to Sonnet while coding). README model routing rewritten for the 5.5 models.
 - Status line shows plain colored percentages (`CTX: 14% (200k)` — percentage plus window size) instead of
   10-cell gauges — shorter line, same traffic-light colors and countdowns.
 - Personalized marketplace/plugin metadata and install references
