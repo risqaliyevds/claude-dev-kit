@@ -61,6 +61,10 @@ mutant "model-routing wipes the user's other env vars" \
   plugins/core/scripts/model-routing.sh \
   's|((.env // {}) +|({} +|'
 
+mutant "status line drops the effort segment" \
+  plugins/core/statusline/statusline.py \
+  's|head += f".*Effort: {effort}"|pass|'
+
 mutant "healthy usage renders blue instead of green" \
   plugins/core/statusline/statusline.py \
   's|\\033\[32m|\\033[34m|'

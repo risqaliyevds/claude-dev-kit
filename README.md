@@ -180,7 +180,7 @@ formats — one consolidated plan, confirmed before anything moves.
 | `researcher` | subagent (Opus 5.5) | Heavy investigation in an isolated context; returns a concise brief instead of flooding your session |
 | auto-format | hook | Runs project-local Prettier on every file Claude writes/edits (no-op if absent) |
 | scaffold | hook | SessionStart: creates any missing standard project file in every git repo (create-if-missing; plugin repos skipped) |
-| status line | script + hook | Rate-limit status line (model, context %, 5-hour 📊, weekly 📅 and weekly-Fable 🔮 usage % with reset countdowns; plain numbers, no gauges); installed at user scope by `install.sh` and self-healed every session by the SessionStart hook |
+| status line | script + hook | Rate-limit status line (model, live effort level, context %, 5-hour 📊, weekly 📅 and weekly-Fable 🔮 usage % with reset countdowns; plain numbers, no gauges); installed at user scope by `install.sh` and self-healed every session by the SessionStart hook |
 | ECC rules installer | script | `plugins/core/scripts/ecc-rules.sh` copies ECC's always-loaded rule packs to `~/.claude/rules/ecc/` and writes the precedence rule (Ponytail ladder + model policy) |
 | model routing | script | `plugins/core/scripts/model-routing.sh` pins Opus 5.5 for everything except coding (Sonnet 5.5) in `~/.claude/settings.json`; run by `install.sh` |
 
@@ -283,11 +283,12 @@ in a prompt requests one-off deeper reasoning.
 ## Status line
 
 ```
-🧠 Model: Fable 5.1 • CTX: 53% (1M) • 📊 HL: 12% ↻ 2h 10m • 📅 WL: 85% ↻ 2d 3h • 🔮 WLF: 7% ↻ 2d 3h
+🧠 Model: Opus 5.5 • 💭 Effort: high • CTX: 53% (1M) • 📊 HL: 12% ↻ 2h 10m • 📅 WL: 85% ↻ 2d 3h • 🔮 WLF: 7% ↻ 2d 3h
 ```
 
 | Segment | Meaning | Source |
 |---|---|---|
+| `💭 Effort` | live reasoning effort (`low`…`max`), follows `/effort` mid-session; omitted when the model has no effort parameter | stdin `effort.level` |
 | `CTX` | context used %, window size in parentheses | stdin `context_window` |
 | `📊 HL` | 5-hour rolling limit, resets in | stdin `rate_limits.five_hour` |
 | `📅 WL` | weekly limit, all models | stdin `rate_limits.seven_day` |

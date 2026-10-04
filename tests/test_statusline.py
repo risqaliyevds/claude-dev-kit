@@ -204,7 +204,7 @@ class TestEndToEnd(unittest.TestCase):
         r = run(fixture.read_text(encoding="utf-8"))
         G, X = "\033[32m", "\033[0m"
         expected = (
-            "🧠 Model: Sonnet 5 • "
+            "🧠 Model: Sonnet 5 • 💭 Effort: high • "
             f"CTX: {G}8%{X} (200k) • "
             f"📊 HL: {G}24%{X} ↻ now • "
             f"📅 WL: {G}41%{X} ↻ now • "
@@ -212,6 +212,31 @@ class TestEndToEnd(unittest.TestCase):
         )
         self.assertEqual(r.returncode, 0)
         self.assertEqual(r.stdout.strip(), expected)
+
+    def test_effort_shows_live_level_next_to_model(self):
+        # effort.level is the LIVE session value (mid-session /effort included),
+        # so whatever Claude Code sends is what the line shows, right after the model.
+        for level in ["low", "medium", "high", "xhigh", "max"]:
+            payload = {"model": {"display_name": "Opus 5.5"}, "effort": {"level": level}}
+            r = run(json.dumps(payload))
+            self.assertEqual(r.returncode, 0)
+            self.assertIn(f"🧠 Model: Opus 5.5 • 💭 Effort: {level} • CTX", r.stdout)
+
+    def test_effort_absent_or_malformed_omits_segment(self):
+        # Absent = the model does not support effort (docs): no segment at all,
+        # and schema drift must neither crash nor print a bogus value.
+        for stdin in [
+            '{"model": {"display_name": "Haiku 4.5"}}',
+            '{"effort": null}',
+            '{"effort": "high"}',
+            '{"effort": {"level": 3}}',
+            '{"effort": {"level": ""}}',
+            '{"effort": {"level": ["high"]}}',
+        ]:
+            r = run(stdin)
+            self.assertEqual(r.returncode, 0, f"crashed on stdin={stdin!r}\n{r.stderr}")
+            self.assertNotIn("Effort", r.stdout, stdin)
+            self.assertIn("🧠 Model:", r.stdout)
 
     def test_windows_independently_absent(self):
         payload = {"rate_limits": {"five_hour": {"used_percentage": 30}}}

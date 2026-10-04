@@ -19,6 +19,9 @@
     }
   },
   "exceeds_200k_tokens": false,
+  "effort": {
+    "level": "high"
+  },
   "rate_limits": {
     "five_hour": {
       "used_percentage": 23.5,

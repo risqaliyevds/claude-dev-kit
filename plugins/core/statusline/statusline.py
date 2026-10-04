@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
-"""Claude Code statusLine:  🧠 <model> • CTX: N% (size) • 📊 HL: N% ↻ Xh • 📅 WL: M% ↻ Xd Yh • 🔮 WLF: F%
+"""Claude Code statusLine:  🧠 <model> • 💭 Effort: <level> • CTX: N% (size) • 📊 HL: N% ↻ Xh • 📅 WL: M% ↻ Xd Yh • 🔮 WLF: F%
 
-Reads the REAL rate-limit data Claude Code passes on stdin (v2.1.80+, Pro/Max).
+Reads the REAL session data Claude Code passes on stdin.
 Schema (https://code.claude.com/docs/en/statusline):
+    effort.level                            low|medium|high|xhigh|max → 💭  (live, incl.
+                                            mid-session /effort; absent when the model
+                                            has no effort parameter → segment omitted)
     rate_limits.five_hour.used_percentage   0-100  → 📊  (5-hour rolling window)
     rate_limits.five_hour.resets_at         unix epoch seconds
     rate_limits.seven_day.used_percentage   0-100  → 📅  (weekly / 7-day window)
@@ -148,10 +151,12 @@ def fable_weekly(cfg, fetch=fetch_usage):
 
 def main():
     model = "Claude"
+    effort = None
     rl, cw = {}, {}
     try:
         p = as_dict(json.load(sys.stdin))
         model = as_dict(p.get("model")).get("display_name") or model
+        effort = as_dict(p.get("effort")).get("level")
         rl = as_dict(p.get("rate_limits"))
         cw = as_dict(p.get("context_window"))
     except Exception:
@@ -188,7 +193,13 @@ def main():
     if wf_reset:
         wlf += f" ↻ {wf_reset}"
 
-    print(f"🧠 Model: {model} • {ctx} • {hl} • {wl} • {wlf}")
+    head = f"🧠 Model: {model}"
+    # effort.level is the live session value (mid-session /effort included);
+    # absent when the model has no effort parameter — then no segment at all.
+    if isinstance(effort, str) and effort:
+        head += f" • 💭 Effort: {effort}"
+
+    print(f"{head} • {ctx} • {hl} • {wl} • {wlf}")
 
 
 if __name__ == "__main__":

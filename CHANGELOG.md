@@ -7,6 +7,11 @@ on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). This repo has no
 ## [Unreleased]
 
 ### Added
+- Status line `💭 Effort: <level>` segment right after the model, from the
+  `effort.level` Claude Code passes on stdin — the live session value, so a
+  mid-session `/effort` change shows up; omitted when the model has no effort
+  parameter. Lives in the kit's `statusline.py` (a hand edit to
+  `~/.claude/statusline.py` is overwritten by the next session's re-sync).
 - Model routing: Opus 5.5 for everything except coding, which runs on
   Sonnet 5.5. New `plugins/core/scripts/model-routing.sh` (+
   `tests/test_model_routing.sh`), run by `install.sh`, merges `model:
