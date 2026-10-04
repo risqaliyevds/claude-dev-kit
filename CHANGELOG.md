@@ -97,6 +97,11 @@ on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). This repo has no
   Windows/autocrlf checkouts.
 
 ### Fixed
+- `/core:init-dev-kit` never actually installed the latest kit: it only ran
+  `claude plugin marketplace update`, which refreshes the catalog but leaves
+  the old plugin version installed. It now also runs `claude plugin update
+  core@dev-kit`, and re-applies `model-routing.sh` so onboarding brings the
+  machine's model/effort settings up to the kit too.
 - Status line kept disappearing because the shipped project `settings.json`
   template enabled `core@dev-kit` per project: with the user-scope install
   present, each project got its own copy pinned at whatever version was
@@ -143,6 +148,9 @@ on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). This repo has no
   required file (previously missing).
 
 ### Changed
+- Effort pinned to `high` by `model-routing.sh` (top-level `effortLevel` and
+  any per-model `modelSettings` value, which would otherwise win) — was
+  Claude Code's `xhigh` default.
 - `/core:plan` and the `researcher` agent run on `model: opus` (was the `best`
   alias); `code-reviewer` is pinned to `opus` (was `inherit`, which dropped it
   to Sonnet while coding). README model routing rewritten for the 5.5 models.

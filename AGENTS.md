@@ -29,8 +29,9 @@ available in every project.
     Plugins cannot ship rules, so this runs from `install.sh`.
   - `scripts/model-routing.sh` — pins model routing in
     `~/.claude/settings.json`: Opus 5.5 for everything except coding, which
-    runs on Sonnet 5.5 (`opusplan` + alias pins + `CLAUDE_CODE_SUBAGENT_MODEL`).
-    Run by `install.sh` only, never per session (it would undo `/model`).
+    runs on Sonnet 5.5 (`opusplan` + alias pins + `CLAUDE_CODE_SUBAGENT_MODEL`),
+    effort `high`. Run by `install.sh` and `/core:init-dev-kit`, never per
+    session (it would undo `/model` and `/effort`).
 - `install.sh` — one-time machine setup (adds marketplaces, installs `core` +
   Ponytail + UI/UX Pro Max + ECC (`ecc@ecc`, user scope only, standard hook
   profile) companions, installs ECC rules, pins model routing, sets up the

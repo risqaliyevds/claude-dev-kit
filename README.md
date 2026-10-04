@@ -151,7 +151,8 @@ Don't want it in a particular repo? Delete the files after they appear and
 they will be recreated next session — to opt a repo out permanently, disable
 the `core` plugin there or remove the `SessionStart` hook.
 
-Onboarding an existing repo: `/core:init-dev-kit` pulls the latest kit,
+Onboarding an existing repo: `/core:init-dev-kit` pulls and installs the
+latest kit, re-applies the model routing (`plugins/core/scripts/model-routing.sh`),
 scaffolds every missing standard file, triages loose root files into the
 convention folders (`docs/`, `docs/plans/`, `scripts/`, `tmp/`), and
 formats — one consolidated plan, confirmed before anything moves.
@@ -160,7 +161,7 @@ formats — one consolidated plan, confirmed before anything moves.
 
 | Component | Type | What it does |
 |---|---|---|
-| `/core:init-dev-kit` | skill (manual only) | Onboards an existing repo: pulls the latest kit, scaffolds every standard file, reorganizes the tree into the convention folders, and formats |
+| `/core:init-dev-kit` | skill (manual only) | Onboards an existing repo: pulls and installs the latest kit, re-applies model routing + effort, scaffolds every standard file, reorganizes the tree into the convention folders, and formats |
 | `/core:changelog` | skill (auto + manual) | Updates `CHANGELOG.md` in Keep a Changelog format from your actual git changes |
 | `/core:release <version>` | skill (manual only) | Moves `[Unreleased]` under a version heading, bumps version, commits, tags |
 | `/core:commit` | skill (manual only) | Conventional Commits workflow; checks the changelog first |
@@ -245,10 +246,11 @@ before writing UI code, so this kit no longer ships a `ui-ux` skill.
 
 ## Model routing
 
-**Opus 5.5 for everything except coding, which runs on Sonnet 5.5.**
-`install.sh` pins it at user scope with `plugins/core/scripts/model-routing.sh`
-(merges into `~/.claude/settings.json`, keeps every other key); the project
-template carries the same routing as aliases (`opusplan` / `opus`).
+**Opus 5.5 for everything except coding, which runs on Sonnet 5.5 — all at
+effort `high`.** `install.sh` and `/core:init-dev-kit` pin it at user scope
+with `plugins/core/scripts/model-routing.sh` (merges into
+`~/.claude/settings.json`, keeps every other key); the project template
+carries the same routing as aliases (`opusplan` / `opus`).
 
 | Who | Model | Set by |
 |---|---|---|
@@ -270,8 +272,13 @@ main-thread turn (questions, reviews, git) runs on Sonnet. For a mostly
 non-coding session, `/model opus`; `/model opusplan` returns to the hybrid.
 `/model fable` puts one hard, long-running task on **Fable 5.1** (Claude Code
 re-runs a classifier-flagged request on Opus and continues there — so never
-remap `ANTHROPIC_DEFAULT_OPUS_MODEL` to Fable). `/effort` tunes reasoning
-depth; `ultrathink` in a prompt requests one-off deeper reasoning.
+remap `ANTHROPIC_DEFAULT_OPUS_MODEL` to Fable).
+
+Effort is pinned to `high` (top-level `effortLevel`, and inside any
+`modelSettings` entry, where a per-model value would beat it): the
+quality/token sweet spot, and thinking still scales per request — easy turns
+stay short. `/effort xhigh` raises one session for a hard task; `ultrathink`
+in a prompt requests one-off deeper reasoning.
 
 ## Status line
 

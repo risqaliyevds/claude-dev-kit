@@ -17,6 +17,18 @@ for f in agents/researcher.md agents/code-reviewer.md skills/plan/SKILL.md; do
   grep -qx 'model: opus' "$ROOT/plugins/core/$f" || { echo "$f is not pinned to model: opus"; exit 1; }
 done
 
+# 1b. /core:init-dev-kit brings the machine up to date too: it updates the
+#     installed plugin (a marketplace refresh alone leaves the old version
+#     installed) and applies the routing via a path that really resolves.
+INIT="$ROOT/plugins/core/skills/init-dev-kit/SKILL.md"
+grep -q 'claude plugin update core@dev-kit' "$INIT" || { echo "init-dev-kit does not update the installed plugin"; exit 1; }
+# shellcheck disable=SC2016 # ${CLAUDE_SKILL_DIR} is the literal text in the skill
+ref=$(grep -o '\${CLAUDE_SKILL_DIR}/[^ `"]*model-routing\.sh' "$INIT" | head -1)
+[ -n "$ref" ] || { echo "init-dev-kit does not run model-routing.sh"; exit 1; }
+SKILL_DIR="$ROOT/plugins/core/skills/init-dev-kit"
+[ -f "$(printf '%s' "$ref" | sed "s|\${CLAUDE_SKILL_DIR}|$SKILL_DIR|")" ] ||
+  { echo "init-dev-kit references a missing script: $ref"; exit 1; }
+
 command -v jq >/dev/null 2>&1 || { echo "SKIP: jq not installed"; exit 0; }
 
 TMP=$(mktemp -d)
@@ -33,17 +45,22 @@ routed() {
   [ "$(get .env.ANTHROPIC_DEFAULT_SONNET_MODEL)" = "claude-sonnet-5-5" ] || { echo "coding is not on Sonnet 5.5"; return 1; }
   [ "$(get .env.ANTHROPIC_DEFAULT_HAIKU_MODEL)" = "claude-opus-5-5" ] || { echo "haiku alias not mapped to Opus"; return 1; }
   [ "$(get .env.CLAUDE_CODE_SUBAGENT_MODEL)" = "claude-opus-5-5" ] || { echo "subagents not on Opus"; return 1; }
+  [ "$(get .effortLevel)" = "high" ] || { echo "effortLevel is $(get .effortLevel), want high"; return 1; }
 }
 
-# 2. Fresh machine (no config dir, no settings): creates them, fully routed.
+# 2. Fresh machine (no config dir, no settings): creates them, fully routed,
+#    without inventing keys it has nothing to put in.
 sh "$SCRIPT" >/dev/null
 routed
+[ "$(get 'has("modelSettings")')" = "false" ] || { echo "created a modelSettings key"; exit 1; }
 
 # 3. Existing settings: routing keys are overwritten (an old all-Opus remap of
-#    the sonnet alias is fixed), every unrelated key and env var survives.
+#    the sonnet alias is fixed; xhigh effort — top-level or per-model, which
+#    would silently beat the top-level value — drops to high), every unrelated
+#    key and env var survives.
 cat >"$SETTINGS" <<'EOF'
 {"model": "claude-opus-5-5", "effortLevel": "xhigh",
- "modelSettings": {"claude-opus-5-5": {"effortLevel": "xhigh"}},
+ "modelSettings": {"claude-opus-5-5": {"effortLevel": "xhigh", "keep": 1}},
  "statusLine": {"type": "command", "command": "my-own"},
  "env": {"FOO": "bar", "ANTHROPIC_DEFAULT_SONNET_MODEL": "claude-opus-5-5"}}
 EOF
@@ -51,8 +68,8 @@ sh "$SCRIPT" >/dev/null
 routed
 [ "$(get .env.FOO)" = "bar" ] || { echo "lost unrelated env var"; exit 1; }
 [ "$(get .statusLine.command)" = "my-own" ] || { echo "lost statusLine"; exit 1; }
-[ "$(get .effortLevel)" = "xhigh" ] || { echo "lost effortLevel"; exit 1; }
-[ "$(get '.modelSettings["claude-opus-5-5"].effortLevel')" = "xhigh" ] || { echo "lost modelSettings"; exit 1; }
+[ "$(get '.modelSettings["claude-opus-5-5"].effortLevel')" = "high" ] || { echo "per-model effort not set to high"; exit 1; }
+[ "$(get '.modelSettings["claude-opus-5-5"].keep')" = "1" ] || { echo "lost other modelSettings keys"; exit 1; }
 
 # 4. Idempotent: a second run changes nothing.
 cp "$SETTINGS" "$TMP/before.json"

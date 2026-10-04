@@ -5,8 +5,11 @@
 #   advisorModel                Sonnet consults Opus 5.5 mid-task
 #   ANTHROPIC_DEFAULT_*_MODEL   opus/sonnet aliases → 5.5; haiku alias → Opus
 #   CLAUDE_CODE_SUBAGENT_MODEL  every subagent on Opus 5.5
-# Merges only these keys into settings.json; everything else is kept. Called
-# by install.sh only — running it every session would undo /model choices.
+#   effortLevel high            also inside modelSettings entries, where a
+#                               per-model value would beat the top-level one
+# Merges only these keys into settings.json; everything else is kept. Run by
+# install.sh and /core:init-dev-kit only — never every session (that would
+# undo /model and /effort choices).
 # Usage: model-routing.sh   (honors CLAUDE_CONFIG_DIR; needs jq)
 set -eu
 
@@ -21,7 +24,10 @@ mkdir -p "$(dirname "$SETTINGS")"
 
 TMP="$SETTINGS.tmp.$$"
 if jq --arg o "$OPUS" --arg s "$SONNET" '
-  .model = "opusplan" | .advisorModel = $o |
+  .model = "opusplan" | .advisorModel = $o | .effortLevel = "high" |
+  (if .modelSettings then .modelSettings[] |= (
+    if type == "object" and has("effortLevel") then .effortLevel = "high" else . end
+  ) else . end) |
   .env = ((.env // {}) + {
     ANTHROPIC_DEFAULT_OPUS_MODEL: $o,
     ANTHROPIC_DEFAULT_SONNET_MODEL: $s,
@@ -34,4 +40,4 @@ else
   echo "model-routing: $SETTINGS is not valid JSON — left untouched" >&2
   exit 1
 fi
-echo "model-routing: Opus 5.5 everywhere, Sonnet 5.5 for coding → $SETTINGS"
+echo "model-routing: Opus 5.5 everywhere, Sonnet 5.5 for coding, effort high → $SETTINGS"

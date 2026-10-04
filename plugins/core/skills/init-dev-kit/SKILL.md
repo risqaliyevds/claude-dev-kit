@@ -14,10 +14,18 @@ untrack, or bulk reformat** — this can touch many files. Work in order.
    - Run `git status`. If the tree is dirty, warn me and let me commit/stash
      first — triaging on top of uncommitted changes is hard to review.
 
-1. Pull the latest kit:
-   - `claude plugin marketplace update dev-kit` (fetches the newest commit).
-   - Tell me to run `/reload-plugins` (or restart) so new skills/hooks/templates
-     load. These commands update the *installed plugin*, never this repo's files.
+1. Pull the latest kit and bring this machine's settings up to it:
+   - `claude plugin marketplace update dev-kit` (fetches the newest commit),
+     then `claude plugin update core@dev-kit` (installs it — a marketplace
+     refresh alone leaves the old version installed).
+   - Apply the kit's model routing at user scope:
+     `sh "${CLAUDE_SKILL_DIR}/../../scripts/model-routing.sh"` — Opus 5.5 for
+     everything except coding (Sonnet 5.5), effort `high`. Tell me it rewrites
+     `model`/`effortLevel` in `~/.claude/settings.json` (undoing any saved
+     `/model` or `/effort` choice). If it fails (no jq), report it and continue.
+   - Tell me to restart Claude Code so the new skills/hooks/templates and
+     settings load. These commands touch the installed plugin and user
+     settings, never this repo's files.
 
 2. Scaffold missing standard files (create-if-missing, never overwrite), from the
    `new-project` skill's `templates/` — same set the SessionStart hook uses:
