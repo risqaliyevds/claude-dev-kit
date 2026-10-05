@@ -202,9 +202,9 @@ class TestEndToEnd(unittest.TestCase):
         # format drift on our side = update this expected string deliberately.
         fixture = pathlib.Path(__file__).resolve().parent / "fixtures/statusline_payload.json"
         r = run(fixture.read_text(encoding="utf-8"))
-        G, X = "\033[32m", "\033[0m"
+        G, Y, X = "\033[32m", "\033[33m", "\033[0m"
         expected = (
-            "🧠 Model: Sonnet 5 • 💭 Effort: high • "
+            f"🧠 Model: Sonnet 5 • {Y}high{X} • "
             f"CTX: {G}8%{X} (200k) • "
             f"📊 HL: {G}24%{X} ↻ now • "
             f"📅 WL: {G}41%{X} ↻ now • "
@@ -213,14 +213,31 @@ class TestEndToEnd(unittest.TestCase):
         self.assertEqual(r.returncode, 0)
         self.assertEqual(r.stdout.strip(), expected)
 
-    def test_effort_shows_live_level_next_to_model(self):
-        # effort.level is the LIVE session value (mid-session /effort included),
-        # so whatever Claude Code sends is what the line shows, right after the model.
-        for level in ["low", "medium", "high", "xhigh", "max"]:
+    # Effort palette, cool → hot: a user-visible contract, one distinct color per level.
+    EFFORT_COLORS = {
+        "low": "\033[36m",  # cyan
+        "medium": "\033[32m",  # green
+        "high": "\033[33m",  # yellow
+        "xhigh": "\033[35m",  # magenta
+        "max": "\033[31m",  # red
+    }
+
+    def test_effort_shows_live_level_colored_next_to_model(self):
+        # effort.level is the LIVE session value (mid-session /effort included):
+        # shown bare (no label) right after the model, in its level's color.
+        self.assertEqual(len(set(self.EFFORT_COLORS.values())), 5)  # all distinct
+        for level, color in self.EFFORT_COLORS.items():
             payload = {"model": {"display_name": "Opus 5.5"}, "effort": {"level": level}}
             r = run(json.dumps(payload))
             self.assertEqual(r.returncode, 0)
-            self.assertIn(f"🧠 Model: Opus 5.5 • 💭 Effort: {level} • CTX", r.stdout)
+            self.assertIn(f"🧠 Model: Opus 5.5 • {color}{level}\033[0m • CTX", r.stdout)
+            self.assertNotIn("Effort", r.stdout)
+
+    def test_unknown_effort_level_renders_plain(self):
+        # A level Claude Code adds later still shows, just uncolored.
+        r = run('{"model": {"display_name": "Opus 5.5"}, "effort": {"level": "turbo"}}')
+        self.assertEqual(r.returncode, 0)
+        self.assertIn("🧠 Model: Opus 5.5 • turbo • CTX", r.stdout)
 
     def test_effort_absent_or_malformed_omits_segment(self):
         # Absent = the model does not support effort (docs): no segment at all,
@@ -235,8 +252,7 @@ class TestEndToEnd(unittest.TestCase):
         ]:
             r = run(stdin)
             self.assertEqual(r.returncode, 0, f"crashed on stdin={stdin!r}\n{r.stderr}")
-            self.assertNotIn("Effort", r.stdout, stdin)
-            self.assertIn("🧠 Model:", r.stdout)
+            self.assertRegex(r.stdout, r"^🧠 Model: [^•]+ • CTX", stdin)
 
     def test_windows_independently_absent(self):
         payload = {"rate_limits": {"five_hour": {"used_percentage": 30}}}

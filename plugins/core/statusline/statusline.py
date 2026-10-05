@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""Claude Code statusLine:  🧠 <model> • 💭 Effort: <level> • CTX: N% (size) • 📊 HL: N% ↻ Xh • 📅 WL: M% ↻ Xd Yh • 🔮 WLF: F%
+"""Claude Code statusLine:  🧠 <model> • <effort> • CTX: N% (size) • 📊 HL: N% ↻ Xh • 📅 WL: M% ↻ Xd Yh • 🔮 WLF: F%
 
 Reads the REAL session data Claude Code passes on stdin.
 Schema (https://code.claude.com/docs/en/statusline):
-    effort.level                            low|medium|high|xhigh|max → 💭  (live, incl.
-                                            mid-session /effort; absent when the model
-                                            has no effort parameter → segment omitted)
+    effort.level                            low|medium|high|xhigh|max, colored per level
+                                            (live, incl. mid-session /effort; absent when
+                                            the model has no effort parameter → omitted)
     rate_limits.five_hour.used_percentage   0-100  → 📊  (5-hour rolling window)
     rate_limits.five_hour.resets_at         unix epoch seconds
     rate_limits.seven_day.used_percentage   0-100  → 📅  (weekly / 7-day window)
@@ -33,6 +33,8 @@ USAGE_URL = "https://api.anthropic.com/api/oauth/usage"
 CACHE_TTL = 120  # seconds; the line re-renders on every event, so do not hammer the API
 
 GREEN, YELLOW, RED, DIM, RESET = "\033[32m", "\033[33m", "\033[31m", "\033[2m", "\033[0m"
+# Effort, cool → hot. Claude Code's docs define no per-level colors; this is ours.
+EFFORT_COLORS = {"low": "\033[36m", "medium": GREEN, "high": YELLOW, "xhigh": "\033[35m", "max": RED}
 
 
 def as_dict(x):
@@ -197,7 +199,8 @@ def main():
     # effort.level is the live session value (mid-session /effort included);
     # absent when the model has no effort parameter — then no segment at all.
     if isinstance(effort, str) and effort:
-        head += f" • 💭 Effort: {effort}"
+        color = EFFORT_COLORS.get(effort)
+        head += f" • {color}{effort}{RESET}" if color else f" • {effort}"
 
     print(f"{head} • {ctx} • {hl} • {wl} • {wlf}")
 

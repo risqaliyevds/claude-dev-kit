@@ -283,12 +283,12 @@ in a prompt requests one-off deeper reasoning.
 ## Status line
 
 ```
-🧠 Model: Opus 5.5 • 💭 Effort: high • CTX: 53% (1M) • 📊 HL: 12% ↻ 2h 10m • 📅 WL: 85% ↻ 2d 3h • 🔮 WLF: 7% ↻ 2d 3h
+🧠 Model: Opus 5.5 • high • CTX: 53% (1M) • 📊 HL: 12% ↻ 2h 10m • 📅 WL: 85% ↻ 2d 3h • 🔮 WLF: 7% ↻ 2d 3h
 ```
 
 | Segment | Meaning | Source |
 |---|---|---|
-| `💭 Effort` | live reasoning effort (`low`…`max`), follows `/effort` mid-session; omitted when the model has no effort parameter | stdin `effort.level` |
+| effort (after the model) | live reasoning effort, follows `/effort` mid-session; colored cool → hot: `low` cyan, `medium` green, `high` yellow, `xhigh` magenta, `max` red (our palette — Claude Code defines none); omitted when the model has no effort parameter | stdin `effort.level` |
 | `CTX` | context used %, window size in parentheses | stdin `context_window` |
 | `📊 HL` | 5-hour rolling limit, resets in | stdin `rate_limits.five_hour` |
 | `📅 WL` | weekly limit, all models | stdin `rate_limits.seven_day` |
@@ -370,7 +370,7 @@ headlessly, and re-runs the mutation catalog weekly. Inside a session,
 | Symptom | Cause | Fix |
 |---|---|---|
 | Status line blank on Windows | `python3` is the Microsoft Store stub, or the wired command uses `~`/backslashes, or the renderer hit a cp125x code page | Run `sh plugins/core/statusline/setup.sh` (or open a new session); `--check` shows what is wired |
-| Status line keeps coming back broken, or a new segment (e.g. `💭 Effort`) vanishes again | A second, project-scope copy of `core@dev-kit` pinned at an old version runs its stale hook — or a session started before a kit update ran `/clear`/`/compact`, re-syncing its old script | `claude plugin list`; inside that project `claude plugin uninstall core@dev-kit --scope project --keep-data` and commit its `.claude/settings.json`; after any kit update, restart every open session (don't clear/compact the old ones) |
+| Status line keeps coming back broken, or a new segment (e.g. the effort level) vanishes again | A second, project-scope copy of `core@dev-kit` pinned at an old version runs its stale hook — or a session started before a kit update ran `/clear`/`/compact`, re-syncing its old script | `claude plugin list`; inside that project `claude plugin uninstall core@dev-kit --scope project --keep-data` and commit its `.claude/settings.json`; after any kit update, restart every open session (don't clear/compact the old ones) |
 | `WLF: —` | No OAuth token in `~/.claude/.credentials.json` (API-key login, macOS Keychain) | Expected; the other segments still render |
 | ECC blocks the first edit of a file | The standard-profile fact-forcing gate | State importers/schemas as asked, or `ECC_GATEGUARD=off` / `hook_profile=minimal` |
 | `/plugin install core@dev-kit` says already installed globally | It is — user scope covers every project | Nothing to do |
