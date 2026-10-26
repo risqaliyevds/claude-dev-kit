@@ -12,3 +12,6 @@ Thumbs.db
 # Throwaway scratch output
 tmp/
 __pycache__/
+
+# ruflo runtime state (repo-local; the template does not ship this)
+.claude-flow/
