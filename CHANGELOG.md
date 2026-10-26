@@ -6,7 +6,36 @@ on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). This repo has no
 
 ## [Unreleased]
 
+### Changed
+- Lean by default: the kit no longer installs the `ecc@ecc` plugin. Its 387
+  skills and 68 agent descriptions cost ~45k tokens in every session, and the
+  overflow past the 1% skill-listing budget hid the descriptions of the kit's
+  own background skills (`fastapi`, `flutter`, `senior-engineer`, …); a
+  4-month transcript scan found zero ECC skill/command uses. ECC's rules stay.
+  **Migration:** `claude plugin uninstall ecc@ecc --scope user`, then
+  `sh plugins/core/scripts/ecc-rules.sh`. Measured always-on plugin cost on
+  the author's machine: ~63k → ~4.6k tokens (also disabling the unused ruflo
+  family there, which the kit never installed).
+- `ecc-rules.sh` keeps only `security.md` + `git-workflow.md` from ECC's
+  `common/` (loaded every session; 78 always-loaded lines with the
+  precedence rule, down from ~490). Dropped: `coding-style`, `testing`,
+  `code-review`, `development-workflow`, `patterns`, `performance` — they
+  restated model defaults or contradicted the kit (Haiku workers, mandatory
+  subagent review/planning, 80% coverage + E2E everywhere, many small files).
+  The path-scoped `python`/`dart` packs are still copied whole. Each pack dir
+  is now replaced on every run, so rules from an older run stop loading.
+- `00-precedence.md` maps the ECC agents/skills the kept rules mention
+  (`security-reviewer`, `python-reviewer`, "See skill: …") to
+  `core:code-reviewer`, `/core:plan` and the core standards.
+
+### Removed
+- ECC's hooks went with its plugin, including the "Fact-Forcing Gate" that
+  cost a round-trip on the first Bash call and first edit of every file.
+
 ### Added
+- `install.sh` installs `pyright` and the official `pyright-lsp` plugin:
+  live type errors after each edit and symbol-accurate go-to-definition /
+  find-references for Python, with no skill/agent listing cost.
 - Status line shows the effort level right after the model, bare and
   colored per level (`🧠 Model: Opus 5.5 • xhigh`; `low` cyan, `medium`
   green, `high` yellow, `xhigh` magenta, `max` red), from the `effort.level`

@@ -4,9 +4,10 @@ My personal Claude Code setup, packaged as a **plugin marketplace**. Install it
 once per machine and every skill, agent, hook, rule pack and the status line
 is available in every project — no copying files around.
 
-The kit is one `core` plugin plus three curated companions (ECC, Ponytail,
-UI/UX Pro Max), a rate-limit status line, and a test suite that keeps all of
-it honest.
+The kit is one `core` plugin plus curated companions (Ponytail, UI/UX Pro
+Max, ECC's rule packs, Python code intelligence), a rate-limit status line,
+and a test suite that keeps all of it honest. It is built lean on purpose:
+every always-on token competes with your code for the model's attention.
 
 ## Contents
 
@@ -27,23 +28,38 @@ it honest.
 Inventory of everything enabled on a machine after `./install.sh`
 (measured with `claude plugin list` + a file count on this machine):
 
-| Plugin | Skills | Agents | Commands | Hooks | Role |
-|---|---|---|---|---|---|
-| `ecc@ecc` | 293 | 68 | 94 | 24 | Agent harness: planners, reviewers, TDD, session memory, lifecycle hooks |
-| `core@dev-kit` | 15 | 2 | 0 | 2 | This kit: house conventions, scaffolding, changelog/commit/release flow |
-| `ponytail@ponytail` | 6 | 0 | 0 | 0 | Anti-over-engineering discipline (YAGNI ladder) |
-| `figma@claude-plugins-official` | 14 | 0 | 0 | 0 | Figma design-to-code (optional, not installed by `install.sh`) |
-| ruflo (33 plugins) | 126 | 55 | 47 | 8 | Swarm/memory/observability tooling (optional, not installed by `install.sh`) |
-| **Total** | **454** | **125** | **141** | **34** | |
+| Plugin | Skills | Agents | Always-on tokens | Role |
+|---|---|---|---|---|
+| `core@dev-kit` | 15 | 2 | ~1.2k | This kit: house conventions, scaffolding, changelog/commit/release flow |
+| `ponytail@ponytail` | 6 | 0 | ~1k | Anti-over-engineering discipline (YAGNI ladder) |
+| `pyright-lsp@claude-plugins-official` | 0 | 0 | 0 | Python language server: live type errors, go-to-definition, find references |
 
-Outside plugins, the kit also lays down: 18 ECC rule files in
-`~/.claude/rules/ecc/` (always loaded), the status line script in
+Outside plugins, the kit also lays down: ECC rule packs in
+`~/.claude/rules/ecc/` (78 always-loaded lines; the python/dart packs load
+only for matching files), the status line script in
 `~/.claude/statusline.py`, and UI/UX Pro Max as a global skill.
 
-Context cost, measured with `claude -p "reply ok" --output-format json`:
-`core` + Ponytail alone put the system prompt at ~43k tokens; ECC plus its
-rule packs add ~16k (→ ~59k). The ruflo family adds more still — trim it
-first if context gets tight.
+### Why so few plugins
+
+Everything a plugin lists — skill descriptions, agent descriptions — is in
+the system prompt of **every** session, and skill descriptions share a
+budget of 1% of the context window. Over budget, Claude Code drops the
+descriptions of the least-used skills, and a skill without a description is
+never picked automatically. Measured with `claude plugin details <plugin>`
+on this machine (October 2026):
+
+| Setup | Always-on plugin tokens |
+|---|---|
+| Before: `ecc@ecc` (~45k) + 33 ruflo plugins (~14k) + core, ponytail, figma | ~63k |
+| Now: core, ponytail, pyright-lsp (+ figma, optional) | ~4.6k |
+
+Before, the overflow hid the descriptions of the kit's own background skills
+(`fastapi`, `flutter`, `senior-engineer`, …). A 4-month transcript scan found
+zero ECC skill/command uses and zero ruflo uses, so both were dropped; ECC's
+rules stay. Check a machine with `/context` (Skills row) and
+`claude plugin details <plugin>` before adding anything that lists skills or
+agents. `claude -p "reply ok" --output-format json` from a non-repo dir now
+reports ~40k input tokens, most of it Claude Code's own prompt and tools.
 
 ## How it fits together
 
@@ -51,8 +67,8 @@ first if context gets tight.
 install.sh (once per machine)
 ├─ marketplace dev-kit  → plugin core@dev-kit      (user scope)
 ├─ marketplace ponytail → plugin ponytail@ponytail (user scope)
-├─ marketplace ecc      → plugin ecc@ecc           (user scope, hook_profile=standard)
-├─ ecc-rules.sh         → ~/.claude/rules/ecc/     (common + python + dart, + precedence rule)
+├─ ecc-rules.sh         → ~/.claude/rules/ecc/     (common security+git, python, dart, + precedence rule)
+├─ npm i -g pyright     → plugin pyright-lsp       (user scope, official marketplace)
 ├─ model-routing.sh     → ~/.claude/settings.json  (Opus 5.5 everywhere, Sonnet 5.5 codes)
 ├─ uipro init --global  → UI/UX Pro Max skill
 └─ statusline/setup.sh  → ~/.claude/statusline.py + settings.statusLine
@@ -70,15 +86,16 @@ Layering of instructions inside a session, highest priority first:
 
 1. Project `AGENTS.md` / `CLAUDE.md` (scaffolded by the kit, edited by you)
 2. `~/.claude/rules/ecc/00-precedence.md` — Ponytail's ladder wins over ECC
-   coding-style on file count, abstraction and error-handling breadth; the
-   model policy wins over ECC/ruflo model-tier hints
-3. ECC rule packs (security, testing, git workflow, patterns, performance)
+   rules on file count, abstraction and error-handling breadth; ECC agent and
+   skill names map to `core:code-reviewer` / `/core:plan` / the core
+   standards; the model policy wins over any model-tier hint
+3. ECC rule packs (common: security, git workflow; path-scoped: python, dart)
 4. Background skills from `core` (`senior-engineer`, `ai-engineer`, `fastapi`,
    `flutter`, `nlp`, `evals`) — loaded when relevant
 
 ## One-time setup (per machine)
 
-Requirements: git, Node.js 18+ (Ponytail, ECC hooks), Python 3 (status line,
+Requirements: git, Node.js 18+ (Ponytail, pyright), Python 3 (status line,
 UI/UX Pro Max), `jq` (hooks and settings wiring), Claude Code 2.1+.
 
 1. Push this repo to GitHub. (If you forked it, replace `risqaliyevds` in
@@ -104,13 +121,12 @@ projects. Keep it there and nowhere else: the project `settings.json`
 template only declares the marketplace on purpose. A second, project-scope
 copy pins its own version and its stale SessionStart hook fights the
 user-scope one (that is how the status line kept vanishing).
-`claude plugin list` should show `core@dev-kit` and `ecc@ecc` exactly once
-each.
+`claude plugin list` should show `core@dev-kit` exactly once.
 
 Verify:
 
 ```bash
-claude plugin list                                   # core@dev-kit, ecc@ecc, ponytail — user scope, once each
+claude plugin list                                   # core@dev-kit, ponytail, pyright-lsp — user scope, once each
 sh plugins/core/statusline/setup.sh --check          # status line: OK (...)
 ls ~/.claude/rules/ecc                               # 00-precedence.md common/ python/ dart/
 ```
@@ -181,7 +197,7 @@ formats — one consolidated plan, confirmed before anything moves.
 | auto-format | hook | Runs project-local Prettier on every file Claude writes/edits (no-op if absent) |
 | scaffold | hook | SessionStart: creates any missing standard project file in every git repo (create-if-missing; plugin repos skipped) |
 | status line | script + hook | Rate-limit status line (model, live effort level, context %, 5-hour 📊, weekly 📅 and weekly-Fable 🔮 usage % with reset countdowns; plain numbers, no gauges); installed at user scope by `install.sh` and self-healed every session by the SessionStart hook |
-| ECC rules installer | script | `plugins/core/scripts/ecc-rules.sh` copies ECC's always-loaded rule packs to `~/.claude/rules/ecc/` and writes the precedence rule (Ponytail ladder + model policy) |
+| ECC rules installer | script | `plugins/core/scripts/ecc-rules.sh` copies ECC's security + git rules and the python/dart packs to `~/.claude/rules/ecc/` (removing anything else a previous run left) and writes the precedence rule (Ponytail ladder, ECC-name mapping, model policy) |
 | model routing | script | `plugins/core/scripts/model-routing.sh` pins Opus 5.5 for everything except coding (Sonnet 5.5) in `~/.claude/settings.json`; run by `install.sh` |
 
 Conventions the kit ships to every project (see the `AGENTS.md` template):
@@ -192,41 +208,40 @@ tests are the spec; docs are code.
 
 ## Companions
 
-### ECC — the agent harness
+### ECC — rule packs only
 
-[ECC](https://github.com/affaan-m/ECC) (`ecc@ecc`, MIT) is the agent-harness
-layer: 68 agents (planner, architect, security-reviewer, tdd-guide, language
-reviewers), 293 on-demand skills, `/ecc:*` commands (`/ecc:plan`,
-`/ecc:code-review`, `/ecc:harness-audit`, plus the `tdd-workflow` skill), and
-lifecycle hooks (session memory under `~/.claude/sessions/`, pre-compact
-state saving, pattern extraction, config protection, a fact-forcing gate on
-the first edit of each file).
+[ECC](https://github.com/affaan-m/ECC) (MIT) contributes its rules, not its
+plugin. The `ecc@ecc` plugin (387 skills, 68 agents) cost ~45k tokens in
+every session and its overflow hid the kit's own skills, while a transcript
+scan showed its skills were never used. Plugins cannot ship `rules` anyway,
+so `plugins/core/scripts/ecc-rules.sh` shallow-clones ECC and copies:
 
-- `install.sh` installs it at **user scope only** with
-  `hook_profile=standard`. ECC refuses a second scope, and two scopes would
-  run its hooks twice — never add `ecc@ecc` to a project `settings.json`.
-- Plugins cannot ship `rules`, so `plugins/core/scripts/ecc-rules.sh` copies
-  ECC's always-loaded rule packs to `~/.claude/rules/ecc/`: `common` plus the
-  packs matching this kit's stack skills, `python` (includes `fastapi.md`) and
-  `dart`. Add a stack by adding its dir name to `PACKS` in that script.
-- Two common files are skipped on purpose because they describe ECC's
-  manual-copy install and contradict this setup: `hooks.md` (forbids
-  bypass-permissions mode) and `agents.md` (claims agents live in
-  `~/.claude/agents/` and tells Claude to spawn the planner unprompted).
-- A generated `00-precedence.md` settles the one real conflict: Ponytail's
-  ladder wins over ECC coding-style on file count, abstraction and
-  error-handling breadth; ECC's security/testing/git rules stand.
-- Cost: about 16k extra system-prompt tokens per session for plugin plus rule
-  packs combined (measured 43k → 59k).
-- Knobs: the plugin options stored at `pluginConfigs["ecc@ecc"].options` in
-  `~/.claude/settings.json` (`hook_profile`: `minimal`/`standard`/`strict`;
-  `hooks_enabled`: false keeps skills without hooks; `/plugin` → configure
-  edits the same values), the env overrides `ECC_HOOK_PROFILE` and
-  `ECC_HOOKS_ENABLED=0`, and the per-hook
-  `ECC_DISABLED_HOOKS=pre:edit-write:gateguard-fact-force` or
-  `ECC_GATEGUARD=off`.
-- ECC's own statusline is not installed — the kit's stays. On Windows its
-  tmux/dev-server and desktop-notify hooks are no-ops by design.
+- `common/security.md` and `common/git-workflow.md` — the only common files,
+  because `common/` loads in every session. The rest restated model defaults
+  or contradicted the kit (Haiku workers, mandatory subagent review and
+  planning, 80% coverage + E2E everywhere, many small files).
+- The `python` (includes `fastapi.md`) and `dart` packs, which are
+  path-scoped: they load only when Claude touches matching files. Add a
+  stack by adding its dir name to `PACKS`.
+- Never `hooks.md`/`agents.md` from any pack — they describe ECC's
+  manual-copy install, not code.
+
+Each pack dir is managed: a re-run replaces it, so rules from an older run
+stop loading. A generated `00-precedence.md` makes Ponytail's ladder win on
+breadth, maps ECC agent/skill names the rules mention to what the kit ships,
+and states the model policy. Refresh with `sh plugins/core/scripts/ecc-rules.sh`.
+
+Machines set up before October 2026 still have the plugin: run
+`claude plugin uninstall ecc@ecc --scope user`, then the script above.
+
+### pyright-lsp — Python code intelligence
+
+`install.sh` installs `pyright` (npm) and the official `pyright-lsp` plugin.
+Claude then gets live diagnostics after each edit and symbol-accurate
+go-to-definition / find-references instead of text search. No skill/agent
+listing cost. Needs `pyright-langserver` on PATH; heavy on RAM in very large
+repos (`claude plugin disable pyright-lsp@claude-plugins-official` there).
+There is no official Dart language-server plugin yet.
 
 ### Ponytail — anti-over-engineering
 
@@ -258,14 +273,14 @@ carries the same routing as aliases (`opusplan` / `opus`).
 | Main thread executing — coding | **Sonnet 5.5** | `"model": "opusplan"` |
 | Advisor (Sonnet consults it mid-task) | **Opus 5.5** | `advisorModel` |
 | `/core:plan`, `researcher`, `code-reviewer` | **Opus 5.5** | `model: opus` frontmatter |
-| Every other subagent (ECC, ruflo, workflows) — even one whose frontmatter says `sonnet` | **Opus 5.5** | `CLAUDE_CODE_SUBAGENT_MODEL` |
+| Every other subagent (built-in, other plugins, workflows) — even one whose frontmatter says `sonnet` | **Opus 5.5** | `CLAUDE_CODE_SUBAGENT_MODEL` |
 | Anything asking for the `haiku` alias | **Opus 5.5** | `ANTHROPIC_DEFAULT_HAIKU_MODEL` |
 
 `ANTHROPIC_DEFAULT_OPUS_MODEL` / `_SONNET_MODEL` pin the aliases to
 `claude-opus-5-5` / `claude-sonnet-5-5`, so the template's aliases and any
 `model: opus` agent resolve to 5.5. The same policy is stated to the model in
-`~/.claude/rules/ecc/00-precedence.md`, so ECC/ruflo tier hints never pick a
-cheaper model.
+`~/.claude/rules/ecc/00-precedence.md`, so a rule's or plugin's tier hint
+never picks a cheaper model.
 
 `opusplan` uses Opus only while the session is in Plan Mode — every other
 main-thread turn (questions, reviews, git) runs on Sonnet. For a mostly
@@ -342,9 +357,8 @@ claude plugin update core@dev-kit        # restart Claude Code to apply
 ```
 
 Machines with marketplace auto-update enabled pick changes up on their own.
-Companions update the same way (`claude plugin update ecc@ecc`,
-`claude plugin update ponytail@ponytail`); ECC rule packs are refreshed by
-re-running `sh plugins/core/scripts/ecc-rules.sh`.
+Companions update the same way (`claude plugin update ponytail@ponytail`);
+ECC rule packs are refreshed by re-running `sh plugins/core/scripts/ecc-rules.sh`.
 
 ## Developing / testing changes locally
 
@@ -372,6 +386,6 @@ headlessly, and re-runs the mutation catalog weekly. Inside a session,
 | Status line blank on Windows | `python3` is the Microsoft Store stub, or the wired command uses `~`/backslashes, or the renderer hit a cp125x code page | Run `sh plugins/core/statusline/setup.sh` (or open a new session); `--check` shows what is wired |
 | Status line keeps coming back broken, or a new segment (e.g. the effort level) vanishes again | A second, project-scope copy of `core@dev-kit` pinned at an old version runs its stale hook — or a session started before a kit update ran `/clear`/`/compact`, re-syncing its old script | `claude plugin list`; inside that project `claude plugin uninstall core@dev-kit --scope project --keep-data` and commit its `.claude/settings.json`; after any kit update, restart every open session (don't clear/compact the old ones) |
 | `WLF: —` | No OAuth token in `~/.claude/.credentials.json` (API-key login, macOS Keychain) | Expected; the other segments still render |
-| ECC blocks the first edit of a file | The standard-profile fact-forcing gate | State importers/schemas as asked, or `ECC_GATEGUARD=off` / `hook_profile=minimal` |
+| "Fact-Forcing Gate" blocks edits or Bash | The old `ecc@ecc` plugin is still installed | `claude plugin uninstall ecc@ecc --scope user`, restart |
 | `/plugin install core@dev-kit` says already installed globally | It is — user scope covers every project | Nothing to do |
-| Context window feels small | 454 skills across plugins each cost description tokens | Disable plugin families you do not use (ruflo first); `claude plugin details <plugin>` shows projected cost |
+| Context window feels small, or a kit skill is never picked automatically | Too many plugins: their skill/agent descriptions are always-on, and skill descriptions over the 1% budget are dropped | `claude plugin details <plugin>` shows each plugin's always-on cost; `claude plugin disable` the ones you do not use; `/context` shows the Skills row |

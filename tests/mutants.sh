@@ -53,9 +53,21 @@ mutant "setup.sh wires a statusLine command that does not render" \
   plugins/core/statusline/setup.sh \
   's@^renders "$CMD" ||@true ||@'
 
+mutant "ecc-rules copies every always-loaded common rule" \
+  plugins/core/scripts/ecc-rules.sh \
+  's/;; \*) continue ;; esac/;; *) ;; esac/'
+
 mutant "ecc-rules copies the install-mode-specific hooks.md/agents.md" \
   plugins/core/scripts/ecc-rules.sh \
   's/^SKIP=.*/SKIP=""/'
+
+mutant "ecc-rules leaves stale rules from a previous run loading" \
+  plugins/core/scripts/ecc-rules.sh \
+  's|rm -rf "${DST:?}/$pack"|:|'
+
+mutant "install.sh goes back to installing the ECC plugin" \
+  install.sh \
+  's|^sh "$(dirname "$0")/plugins/core/scripts/ecc-rules.sh"|claude plugin install ecc@ecc --scope user; &|'
 
 mutant "model-routing wipes the user's other env vars" \
   plugins/core/scripts/model-routing.sh \
