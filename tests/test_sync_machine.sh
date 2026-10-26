@@ -17,8 +17,9 @@ INIT="$ROOT/plugins/core/skills/init-dev-kit/SKILL.md"
 grep -q 'claude plugin marketplace update dev-kit' "$INIT" || { echo "init-dev-kit does not fetch the latest kit"; exit 1; }
 grep -q 'installLocation' "$INIT" || { echo "init-dev-kit does not locate the fresh marketplace clone"; exit 1; }
 grep -q 'sync-machine.sh" --check' "$INIT" || { echo "init-dev-kit does not show the drift report first"; exit 1; }
-[ -f "$ROOT/plugins/core/scripts/model-routing.sh" ] && grep -q 'model-routing.sh' "$SCRIPT" ||
-  { echo "sync-machine.sh does not apply model routing"; exit 1; }
+if [ ! -f "$ROOT/plugins/core/scripts/model-routing.sh" ] || ! grep -q 'model-routing.sh' "$SCRIPT"; then
+  echo "sync-machine.sh does not apply model routing"; exit 1
+fi
 
 command -v jq >/dev/null 2>&1 || { echo "SKIP: jq not installed"; exit 0; }
 
