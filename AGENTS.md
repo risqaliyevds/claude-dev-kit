@@ -28,18 +28,25 @@ available in every project.
     the path-scoped `python` + `dart` packs whole; never `hooks.md`/`agents.md`)
     to `~/.claude/rules/ecc/`, replacing each pack dir so stale rules go, and
     writes the precedence rule. The ECC plugin itself is not installed
-    (~45k always-on tokens). Plugins cannot ship rules, so this runs from
-    `install.sh`.
+    (~45k always-on tokens). Plugins cannot ship rules, so the machine sync
+    runs it.
   - `scripts/model-routing.sh` — pins model routing in
     `~/.claude/settings.json`: Opus 5.5 for everything except coding, which
     runs on Sonnet 5.5 (`opusplan` + alias pins + `CLAUDE_CODE_SUBAGENT_MODEL`),
-    effort `high`. Run by `install.sh` and `/core:init-dev-kit`, never per
-    session (it would undo `/model` and `/effort`).
-- `install.sh` — one-time machine setup (adds marketplaces, installs `core` +
-  Ponytail + UI/UX Pro Max companions, installs ECC rules, `pyright` +
-  the official `pyright-lsp` plugin, pins model routing, sets up the status
-  line). Keep it lean: anything listing skills or agents costs tokens every
-  session — check `claude plugin details <plugin>` before adding one.
+    effort `high`. Run by the machine sync, never per session (it would undo
+    `/model` and `/effort`).
+  - `scripts/sync-machine.sh` — the single source of machine setup:
+    marketplaces, kit plugins at user scope (`PLUGINS`), pyright + UI/UX Pro
+    Max (npm), ECC rules, model routing, status line. Idempotent; `--check`
+    reports drift without changing anything; retired plugins (`RETIRED`) and
+    project-scope duplicates are reported as `REMOVE`, never removed. Run by
+    `install.sh` and by `/core:init-dev-kit` from the freshly fetched
+    marketplace clone (the loaded skill dir may be an older version). A new
+    companion goes into this script, not into `install.sh`.
+- `install.sh` — one-time machine setup: runs `sync-machine.sh` with this
+  repo as the kit source. Keep the kit lean: anything listing skills or
+  agents costs tokens every session — check `claude plugin details <plugin>`
+  before adding one.
 - `tests/` — dependency-free test suite (`sh tests/run.sh`); CI runs it on
   Ubuntu **and** macOS on every push (`.github/workflows/test.yml`), plus a
   weekly `tests/mutants.sh` mutation audit that proves the suite still kills

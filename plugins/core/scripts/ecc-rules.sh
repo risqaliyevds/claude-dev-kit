@@ -37,6 +37,7 @@ for pack in $PACKS; do
   rm -rf "${DST:?}/$pack"
   mkdir -p "$DST/$pack"
   for f in "$SRC/rules/$pack"/*.md; do
+    [ -e "$f" ] || continue   # empty pack: the glob stays literal
     base=$(basename "$f")
     case " $SKIP " in *" $base "*) continue ;; esac
     if [ "$pack" = common ]; then

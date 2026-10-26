@@ -64,10 +64,7 @@ rm -rf "$CLAUDE_CONFIG_DIR"
 if sh "$SCRIPT" "$TMP" >/dev/null 2>&1; then echo "accepted a non-ECC dir"; exit 1; fi
 [ ! -d "$DST" ] || { echo "wrote rules from a non-ECC dir"; exit 1; }
 
-# 4. install.sh: ECC ships as rules only (its plugin cost ~45k tokens every
-#    session), and Python gets the official LSP plugin for real diagnostics.
-if grep -qE '^[^#]*plugin install ecc@ecc' "$ROOT/install.sh"; then echo "install.sh still installs the ECC plugin"; exit 1; fi
-grep -qE '^[^#]*plugin install pyright-lsp@claude-plugins-official' "$ROOT/install.sh" || { echo "install.sh does not install pyright-lsp"; exit 1; }
-grep -q 'ecc-rules.sh' "$ROOT/install.sh" || { echo "install.sh no longer installs the ECC rules"; exit 1; }
+# Who runs this script (install.sh / init-dev-kit via sync-machine.sh, never
+# the ECC plugin) is pinned in tests/test_sync_machine.sh.
 
 echo OK

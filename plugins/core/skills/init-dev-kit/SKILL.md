@@ -14,18 +14,31 @@ untrack, or bulk reformat** — this can touch many files. Work in order.
    - Run `git status`. If the tree is dirty, warn me and let me commit/stash
      first — triaging on top of uncommitted changes is hard to review.
 
-1. Pull the latest kit and bring this machine's settings up to it:
-   - `claude plugin marketplace update dev-kit` (fetches the newest commit),
-     then `claude plugin update core@dev-kit` (installs it — a marketplace
-     refresh alone leaves the old version installed).
-   - Apply the kit's model routing at user scope:
-     `sh "${CLAUDE_SKILL_DIR}/../../scripts/model-routing.sh"` — Opus 5.5 for
-     everything except coding (Sonnet 5.5), effort `high`. Tell me it rewrites
-     `model`/`effortLevel` in `~/.claude/settings.json` (undoing any saved
-     `/model` or `/effort` choice). If it fails (no jq), report it and continue.
-   - Tell me to restart Claude Code so the new skills/hooks/templates and
-     settings load. These commands touch the installed plugin and user
-     settings, never this repo's files.
+1. Bring this machine up to the latest kit. These steps touch user-scope
+   config (plugins, `~/.claude`), never this repo's files.
+   - Fetch the newest kit: `claude plugin marketplace update dev-kit`.
+   - Locate the fresh clone: the `installLocation` of `dev-kit` in
+     `claude plugin marketplace list --json` (turn `\` into `/`; fallback
+     `~/.claude/plugins/marketplaces/dev-kit`). Call it KIT. Run everything
+     below from KIT, never from `${CLAUDE_SKILL_DIR}` — that is the version
+     this session loaded, possibly older than what you just fetched.
+   - If `KIT/plugins/core/skills/init-dev-kit/SKILL.md` differs from these
+     instructions, Read it and follow it from here instead.
+   - Drift report: `sh "KIT/plugins/core/scripts/sync-machine.sh" --check`.
+     Show me every `DRIFT`, `REMOVE` and `INFO` line. Call out a
+     `model routing differs` line explicitly: applying rewrites `model` /
+     `effortLevel` in `~/.claude/settings.json` and undoes my saved `/model`
+     or `/effort` choice.
+   - After I confirm: `sh "KIT/plugins/core/scripts/sync-machine.sh"`. It
+     adds missing marketplaces; installs, enables and updates the kit plugins
+     (core, Ponytail, pyright-lsp) at user scope; installs/updates pyright and
+     UI/UX Pro Max; refreshes the ECC rules (removing stale ones); pins model
+     routing; repairs the status line. Report any `FAILED` line and continue.
+   - `REMOVE` lines are never applied by the script. Ask me about each one;
+     on yes, run the command it prints (a project-scope copy is removed from
+     inside that project).
+   - Tell me to restart Claude Code so the new plugins, hooks and settings
+     load.
 
 2. Scaffold missing standard files (create-if-missing, never overwrite), from the
    `new-project` skill's `templates/` — same set the SessionStart hook uses:

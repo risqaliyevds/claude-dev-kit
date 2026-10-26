@@ -17,17 +17,17 @@ for f in agents/researcher.md agents/code-reviewer.md skills/plan/SKILL.md; do
   grep -qx 'model: opus' "$ROOT/plugins/core/$f" || { echo "$f is not pinned to model: opus"; exit 1; }
 done
 
-# 1b. /core:init-dev-kit brings the machine up to date too: it updates the
-#     installed plugin (a marketplace refresh alone leaves the old version
-#     installed) and applies the routing via a path that really resolves.
+# 1b. /core:init-dev-kit applies the routing through sync-machine.sh run from
+#     the freshly fetched marketplace clone — never a script under
+#     ${CLAUDE_SKILL_DIR}, which is the (possibly older) loaded version. That
+#     the sync updates core and applies routing is pinned in
+#     tests/test_sync_machine.sh.
 INIT="$ROOT/plugins/core/skills/init-dev-kit/SKILL.md"
-grep -q 'claude plugin update core@dev-kit' "$INIT" || { echo "init-dev-kit does not update the installed plugin"; exit 1; }
+grep -q 'sync-machine.sh' "$INIT" || { echo "init-dev-kit does not run sync-machine.sh"; exit 1; }
 # shellcheck disable=SC2016 # ${CLAUDE_SKILL_DIR} is the literal text in the skill
-ref=$(grep -o '\${CLAUDE_SKILL_DIR}/[^ `"]*model-routing\.sh' "$INIT" | head -1)
-[ -n "$ref" ] || { echo "init-dev-kit does not run model-routing.sh"; exit 1; }
-SKILL_DIR="$ROOT/plugins/core/skills/init-dev-kit"
-[ -f "$(printf '%s' "$ref" | sed "s|\${CLAUDE_SKILL_DIR}|$SKILL_DIR|")" ] ||
-  { echo "init-dev-kit references a missing script: $ref"; exit 1; }
+if grep -q '\${CLAUDE_SKILL_DIR}/[^ `"]*\.sh' "$INIT"; then
+  echo "init-dev-kit runs a script from the stale loaded skill dir"; exit 1
+fi
 
 command -v jq >/dev/null 2>&1 || { echo "SKIP: jq not installed"; exit 0; }
 

@@ -67,7 +67,23 @@ mutant "ecc-rules leaves stale rules from a previous run loading" \
 
 mutant "install.sh goes back to installing the ECC plugin" \
   install.sh \
-  's|^sh "$(dirname "$0")/plugins/core/scripts/ecc-rules.sh"|claude plugin install ecc@ecc --scope user; &|'
+  's|^KIT_REPO="$REPO" sh|claude plugin install ecc@ecc --scope user; &|'
+
+mutant "sync --check changes the machine" \
+  plugins/core/scripts/sync-machine.sh \
+  's|\[ "$CHECK" -eq 1 \] \&\& return 0|:|'
+
+mutant "sync uninstalls the retired ECC plugin without asking" \
+  plugins/core/scripts/sync-machine.sh \
+  's|^    note "REMOVE  $id is retired|    claude plugin uninstall "$id" --scope user; &|'
+
+mutant "sync stops reporting the retired ECC plugin" \
+  plugins/core/scripts/sync-machine.sh \
+  's|^RETIRED=.*|RETIRED=""|'
+
+mutant "sync misses stale ECC rules" \
+  plugins/core/scripts/sync-machine.sh \
+  's|^  why="out of date — still loading:$stale"|  why=""|'
 
 mutant "model-routing wipes the user's other env vars" \
   plugins/core/scripts/model-routing.sh \

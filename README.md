@@ -64,14 +64,14 @@ reports ~40k input tokens, most of it Claude Code's own prompt and tools.
 ## How it fits together
 
 ```
-install.sh (once per machine)
-├─ marketplace dev-kit  → plugin core@dev-kit      (user scope)
-├─ marketplace ponytail → plugin ponytail@ponytail (user scope)
+install.sh (once) and /core:init-dev-kit (any time) → sync-machine.sh
+├─ marketplaces         dev-kit, ponytail, claude-plugins-official (added/updated)
+├─ plugins (user scope) core@dev-kit, ponytail, pyright-lsp (installed/enabled/updated)
+├─ npm                  pyright, ui-ux-pro-max-cli (+ uipro init → UI/UX Pro Max skill)
 ├─ ecc-rules.sh         → ~/.claude/rules/ecc/     (common security+git, python, dart, + precedence rule)
-├─ npm i -g pyright     → plugin pyright-lsp       (user scope, official marketplace)
 ├─ model-routing.sh     → ~/.claude/settings.json  (Opus 5.5 everywhere, Sonnet 5.5 codes)
-├─ uipro init --global  → UI/UX Pro Max skill
-└─ statusline/setup.sh  → ~/.claude/statusline.py + settings.statusLine
+├─ statusline/setup.sh  → ~/.claude/statusline.py + settings.statusLine
+└─ reports, never removes: retired ecc@ecc, project-scope copies of kit plugins
 
 every session (SessionStart hook, core plugin)
 ├─ scaffold.sh   creates missing standard files in any git repo
@@ -167,17 +167,19 @@ Don't want it in a particular repo? Delete the files after they appear and
 they will be recreated next session — to opt a repo out permanently, disable
 the `core` plugin there or remove the `SessionStart` hook.
 
-Onboarding an existing repo: `/core:init-dev-kit` pulls and installs the
-latest kit, re-applies the model routing (`plugins/core/scripts/model-routing.sh`),
-scaffolds every missing standard file, triages loose root files into the
-convention folders (`docs/`, `docs/plans/`, `scripts/`, `tmp/`), and
-formats — one consolidated plan, confirmed before anything moves.
+Onboarding an existing repo: `/core:init-dev-kit` first brings the
+**machine** up to the latest kit — fetches it, shows the
+`sync-machine.sh --check` drift report, and after you confirm runs the sync
+(see [Updating the kit](#updating-the-kit)). Then it scaffolds every missing
+standard file, triages loose root files into the convention folders
+(`docs/`, `docs/plans/`, `scripts/`, `tmp/`), and formats — one consolidated
+plan, confirmed before anything moves.
 
 ## The `core` plugin
 
 | Component | Type | What it does |
 |---|---|---|
-| `/core:init-dev-kit` | skill (manual only) | Onboards an existing repo: pulls and installs the latest kit, re-applies model routing + effort, scaffolds every standard file, reorganizes the tree into the convention folders, and formats |
+| `/core:init-dev-kit` | skill (manual only) | Syncs this machine to the latest kit (drift report → confirm → `sync-machine.sh`; removals asked one by one), then onboards the repo: scaffolds every standard file, reorganizes the tree into the convention folders, and formats |
 | `/core:changelog` | skill (auto + manual) | Updates `CHANGELOG.md` in Keep a Changelog format from your actual git changes |
 | `/core:release <version>` | skill (manual only) | Moves `[Unreleased]` under a version heading, bumps version, commits, tags |
 | `/core:commit` | skill (manual only) | Conventional Commits workflow; checks the changelog first |
@@ -198,7 +200,8 @@ formats — one consolidated plan, confirmed before anything moves.
 | scaffold | hook | SessionStart: creates any missing standard project file in every git repo (create-if-missing; plugin repos skipped) |
 | status line | script + hook | Rate-limit status line (model, live effort level, context %, 5-hour 📊, weekly 📅 and weekly-Fable 🔮 usage % with reset countdowns; plain numbers, no gauges); installed at user scope by `install.sh` and self-healed every session by the SessionStart hook |
 | ECC rules installer | script | `plugins/core/scripts/ecc-rules.sh` copies ECC's security + git rules and the python/dart packs to `~/.claude/rules/ecc/` (removing anything else a previous run left) and writes the precedence rule (Ponytail ladder, ECC-name mapping, model policy) |
-| model routing | script | `plugins/core/scripts/model-routing.sh` pins Opus 5.5 for everything except coding (Sonnet 5.5) in `~/.claude/settings.json`; run by `install.sh` |
+| machine sync | script | `plugins/core/scripts/sync-machine.sh` brings a machine up to the kit: marketplaces, kit plugins at user scope, pyright + UI/UX Pro Max, ECC rules, model routing, status line. Idempotent; `--check` reports drift and changes nothing; the retired `ecc@ecc` plugin and project-scope duplicates are reported as `REMOVE` lines, never removed. Run by `install.sh` and `/core:init-dev-kit` |
+| model routing | script | `plugins/core/scripts/model-routing.sh` pins Opus 5.5 for everything except coding (Sonnet 5.5) in `~/.claude/settings.json`; run by `sync-machine.sh` (`install.sh`, `/core:init-dev-kit`) |
 
 Conventions the kit ships to every project (see the `AGENTS.md` template):
 `AGENTS.md` holds the shared, tool-agnostic context and `CLAUDE.md` only
@@ -236,7 +239,7 @@ Machines set up before October 2026 still have the plugin: run
 
 ### pyright-lsp — Python code intelligence
 
-`install.sh` installs `pyright` (npm) and the official `pyright-lsp` plugin.
+The machine sync (`install.sh`, `/core:init-dev-kit`) installs `pyright` (npm) and the official `pyright-lsp` plugin.
 Claude then gets live diagnostics after each edit and symbol-accurate
 go-to-definition / find-references instead of text search. No skill/agent
 listing cost. Needs `pyright-langserver` on PATH; heavy on RAM in very large
@@ -349,16 +352,26 @@ the copy in this repo (edits to `~/.claude/statusline.py` are overwritten).
 ## Updating the kit
 
 Edit skills, commit, push. No `version` field is set on purpose: every commit
-counts as a new version. On each machine:
+counts as a new version. To bring a machine up to the latest kit — plugins,
+companions, rules, routing, status line — run `/core:init-dev-kit` in any
+repo, or directly:
 
 ```bash
 claude plugin marketplace update dev-kit
-claude plugin update core@dev-kit        # restart Claude Code to apply
+K=~/.claude/plugins/marketplaces/dev-kit/plugins/core/scripts
+sh $K/sync-machine.sh --check   # drift report, changes nothing (exit 1 = drift)
+sh $K/sync-machine.sh           # apply; restart Claude Code afterwards
 ```
 
-Machines with marketplace auto-update enabled pick changes up on their own.
-Companions update the same way (`claude plugin update ponytail@ponytail`);
-ECC rule packs are refreshed by re-running `sh plugins/core/scripts/ecc-rules.sh`.
+Report lines: `OK` current · `DRIFT` out of date (apply fixes it) ·
+`REMOVE` retired or duplicated — run the printed command yourself after
+confirming · `INFO` other enabled plugins worth a cost check · `FAILED` a
+step that could not run. Applying re-pins model routing, which undoes a saved
+`/model` or `/effort` choice (the report says so when it would).
+
+**Machines on a kit older than October 26, 2026** have an `init-dev-kit`
+that predates the sync: run the two commands above once (or run init,
+restart, run init again).
 
 ## Developing / testing changes locally
 
@@ -372,7 +385,7 @@ claude plugin validate .             # check marketplace + plugin schemas
 The suite covers the scaffold hook (throwaway git repos), statusline setup
 (sandboxed `$HOME`, Store-stub and no-interpreter cases), the statusline
 renderer (including a golden test against the documented example payload and
-the WLF fetch/cache path), the ECC rules installer (fixture tree, no
+the WLF fetch/cache path), the ECC rules installer (fixture tree, no network), the machine sync (stubbed `claude`/`npm`, sandboxed `~/.claude`, no
 network), `extract_links.py`, plus JSON validity, shell syntax, shellcheck
 (when installed), docs-path freshness, and personalization guards. CI runs it
 on Ubuntu **and** macOS on every push, validates the plugin schemas

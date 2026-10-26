@@ -6,33 +6,24 @@ on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). This repo has no
 
 ## [Unreleased]
 
-### Changed
-- Lean by default: the kit no longer installs the `ecc@ecc` plugin. Its 387
-  skills and 68 agent descriptions cost ~45k tokens in every session, and the
-  overflow past the 1% skill-listing budget hid the descriptions of the kit's
-  own background skills (`fastapi`, `flutter`, `senior-engineer`, …); a
-  4-month transcript scan found zero ECC skill/command uses. ECC's rules stay.
-  **Migration:** `claude plugin uninstall ecc@ecc --scope user`, then
-  `sh plugins/core/scripts/ecc-rules.sh`. Measured always-on plugin cost on
-  the author's machine: ~63k → ~4.6k tokens (also disabling the unused ruflo
-  family there, which the kit never installed).
-- `ecc-rules.sh` keeps only `security.md` + `git-workflow.md` from ECC's
-  `common/` (loaded every session; 78 always-loaded lines with the
-  precedence rule, down from ~490). Dropped: `coding-style`, `testing`,
-  `code-review`, `development-workflow`, `patterns`, `performance` — they
-  restated model defaults or contradicted the kit (Haiku workers, mandatory
-  subagent review/planning, 80% coverage + E2E everywhere, many small files).
-  The path-scoped `python`/`dart` packs are still copied whole. Each pack dir
-  is now replaced on every run, so rules from an older run stop loading.
-- `00-precedence.md` maps the ECC agents/skills the kept rules mention
-  (`security-reviewer`, `python-reviewer`, "See skill: …") to
-  `core:code-reviewer`, `/core:plan` and the core standards.
-
-### Removed
-- ECC's hooks went with its plugin, including the "Fact-Forcing Gate" that
-  cost a round-trip on the first Bash call and first edit of every file.
-
 ### Added
+- `plugins/core/scripts/sync-machine.sh` (+ `tests/test_sync_machine.sh`):
+  one idempotent sync that brings a machine up to the kit — adds missing
+  marketplaces; installs, enables and updates `core`, Ponytail and
+  `pyright-lsp` at user scope; installs/updates pyright and UI/UX Pro Max;
+  refreshes ECC rules (dropping stale ones); pins model routing; repairs the
+  status line. `--check` prints a drift report (`OK`/`DRIFT`/`REMOVE`/`INFO`)
+  and changes nothing. The retired `ecc@ecc` plugin and project-scope copies
+  of kit plugins are reported with the exact uninstall command, never removed.
+  `install.sh` is now a thin wrapper around it.
+- `/core:init-dev-kit` syncs the machine first: fetches the kit, runs the
+  sync from the fresh marketplace clone (not the possibly older loaded skill
+  dir), shows the drift report, applies after confirmation, and asks about
+  each `REMOVE` line. If the fetched `init-dev-kit` is newer than the loaded
+  one, it follows the fetched instructions. **One-time bootstrap** for
+  machines on an older kit: `claude plugin marketplace update dev-kit`, then
+  `sh ~/.claude/plugins/marketplaces/dev-kit/plugins/core/scripts/sync-machine.sh`
+  (or run init, restart, run init again).
 - `install.sh` installs `pyright` and the official `pyright-lsp` plugin:
   live type errors after each edit and symbol-accurate go-to-definition /
   find-references for Python, with no skill/agent listing cost.
@@ -131,7 +122,45 @@ on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). This repo has no
 - Root `.gitattributes` pinning `*.sh` to LF so hook scripts stay runnable on
   Windows/autocrlf checkouts.
 
+### Changed
+- Lean by default: the kit no longer installs the `ecc@ecc` plugin. Its 387
+  skills and 68 agent descriptions cost ~45k tokens in every session, and the
+  overflow past the 1% skill-listing budget hid the descriptions of the kit's
+  own background skills (`fastapi`, `flutter`, `senior-engineer`, …); a
+  4-month transcript scan found zero ECC skill/command uses. ECC's rules stay.
+  **Migration:** `claude plugin uninstall ecc@ecc --scope user`, then
+  `sh plugins/core/scripts/ecc-rules.sh`. Measured always-on plugin cost on
+  the author's machine: ~63k → ~4.6k tokens (also disabling the unused ruflo
+  family there, which the kit never installed).
+- `ecc-rules.sh` keeps only `security.md` + `git-workflow.md` from ECC's
+  `common/` (loaded every session; 78 always-loaded lines with the
+  precedence rule, down from ~490). Dropped: `coding-style`, `testing`,
+  `code-review`, `development-workflow`, `patterns`, `performance` — they
+  restated model defaults or contradicted the kit (Haiku workers, mandatory
+  subagent review/planning, 80% coverage + E2E everywhere, many small files).
+  The path-scoped `python`/`dart` packs are still copied whole. Each pack dir
+  is now replaced on every run, so rules from an older run stop loading.
+- `00-precedence.md` maps the ECC agents/skills the kept rules mention
+  (`security-reviewer`, `python-reviewer`, "See skill: …") to
+  `core:code-reviewer`, `/core:plan` and the core standards.
+- Effort pinned to `high` by `model-routing.sh` (top-level `effortLevel` and
+  any per-model `modelSettings` value, which would otherwise win) — was
+  Claude Code's `xhigh` default.
+- `/core:plan` and the `researcher` agent run on `model: opus` (was the `best`
+  alias); `code-reviewer` is pinned to `opus` (was `inherit`, which dropped it
+  to Sonnet while coding). README model routing rewritten for the 5.5 models.
+- Status line shows plain colored percentages (`CTX: 14% (200k)` — percentage plus window size) instead of
+  10-cell gauges — shorter line, same traffic-light colors and countdowns.
+- Personalized marketplace/plugin metadata and install references
+  (`risqaliyevds` / `Murod`).
+- Marketplace description and README command table now list the new skills.
+
+### Removed
+- ECC's hooks went with its plugin, including the "Fact-Forcing Gate" that
+  cost a round-trip on the first Bash call and first edit of every file.
+
 ### Fixed
+- `ecc-rules.sh` no longer aborts on a rule pack with no `.md` files.
 - `/core:init-dev-kit` never actually installed the latest kit: it only ran
   `claude plugin marketplace update`, which refreshes the catalog but leaves
   the old plugin version installed. It now also runs `claude plugin update
@@ -181,16 +210,3 @@ on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). This repo has no
   kit no longer scaffolds app-project files into itself.
 - Dogfooding: the kit's own repo now has the `.editorconfig` it ships as a
   required file (previously missing).
-
-### Changed
-- Effort pinned to `high` by `model-routing.sh` (top-level `effortLevel` and
-  any per-model `modelSettings` value, which would otherwise win) — was
-  Claude Code's `xhigh` default.
-- `/core:plan` and the `researcher` agent run on `model: opus` (was the `best`
-  alias); `code-reviewer` is pinned to `opus` (was `inherit`, which dropped it
-  to Sonnet while coding). README model routing rewritten for the 5.5 models.
-- Status line shows plain colored percentages (`CTX: 14% (200k)` — percentage plus window size) instead of
-  10-cell gauges — shorter line, same traffic-light colors and countdowns.
-- Personalized marketplace/plugin metadata and install references
-  (`risqaliyevds` / `Murod`).
-- Marketplace description and README command table now list the new skills.
