@@ -35,7 +35,7 @@ CLEAN=""
 OLDIFS=$IFS
 IFS=:
 for d in $PATH; do
-  for t in claude npm pyright-langserver uipro; do
+  for t in claude npm pyright-langserver uipro gnhf; do
     if [ -e "$d/$t" ] || [ -e "$d/$t.cmd" ] || [ -e "$d/$t.exe" ]; then continue 2; fi
   done
   CLEAN="$CLEAN:$d"
@@ -68,6 +68,7 @@ echo "npm $*" >>"$LOG"
 for a in "$@"; do
   case "$a" in
     pyright) printf '#!/bin/sh\n' >"$BIN/pyright-langserver" ;;
+    gnhf) printf '#!/bin/sh\n' >"$BIN/gnhf" ;;
     ui-ux-pro-max-cli) printf '#!/bin/sh\necho "uipro $*" >>"$LOG"\nmkdir -p "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills/ui-ux-pro-max"\n' >"$BIN/uipro" ;;
   esac
 done
@@ -101,6 +102,8 @@ EOF
 printf '[{"name":"dev-kit"},{"name":"claude-plugins-official"}]\n' >"$STATE/mk.json"
 printf '{"model": "opus", "theme": "dark"}\n' >"$CFG/settings.json"
 printf '# old performance rule\n' >"$CFG/rules/ecc/common/performance.md"
+# A standalone user-level skill: reported, never removed.
+mkdir -p "$CFG/skills/grill-me"
 printf '# old precedence\n' >"$CFG/rules/ecc/00-precedence.md"
 
 has() { grep -qF -- "$1" "$TMP/out" || { echo "output lacks: $1"; cat "$TMP/out"; exit 1; }; }
@@ -117,6 +120,8 @@ has "model: opus"
 has "performance.md"
 has "pyright-langserver"
 has "ruflo-core@ruflo"
+has "gnhf"
+has "user-level skills outside the kit (always-on descriptions; keep only ones that earn it): grill-me"
 if grep -qE '^claude plugin (install|uninstall|enable|update|marketplace (add|update))|^npm ' "$LOG"; then
   echo "--check changed something:"; cat "$LOG"; exit 1
 fi
@@ -132,6 +137,10 @@ logged "claude plugin install pyright-lsp@claude-plugins-official --scope user" 
 logged "claude plugin update core@dev-kit" || { echo "core not updated"; exit 1; }
 logged "npm install -g pyright" || { echo "pyright not installed"; exit 1; }
 logged "uipro init --ai claude --global" || { echo "UI/UX Pro Max not initialized"; exit 1; }
+logged "npm install -g gnhf" || { echo "gnhf not installed"; exit 1; }
+[ -d "$CFG/skills/grill-me" ] || { echo "apply removed a user-level skill"; exit 1; }
+# The uipro stub just created the kit's own UI/UX Pro Max skill: not reported.
+if grep -q "outside the kit.*ui-ux-pro-max" "$TMP/out"; then echo "reported the kit's own UI/UX Pro Max skill"; exit 1; fi
 if grep -q "uninstall" "$LOG"; then echo "apply removed something without asking"; exit 1; fi
 if grep -q "install ecc@ecc" "$LOG"; then echo "apply installed the retired ECC plugin"; exit 1; fi
 [ ! -f "$CFG/rules/ecc/common/performance.md" ] || { echo "stale rule still loading"; exit 1; }

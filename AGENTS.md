@@ -9,10 +9,24 @@ available in every project.
 - `.claude-plugin/marketplace.json` — marketplace manifest (owner: Murod).
 - `plugins/core/` — the plugin:
   - `skills/` — skills (init-dev-kit, new-project, plan, changelog, release,
-    commit, announcement, report-verify, docs-sync, grill-me, plus background
-    standards: senior-engineer, ai-engineer, fastapi, flutter, nlp, evals).
-    This list is inventory-checked by `tests/test_docs.py` — adding a skill
-    without updating it fails the suite.
+    commit, announcement, report-verify, docs-sync, grill-me, ship, firstmate,
+    overnight, learn, plus background standards: senior-engineer,
+    ai-engineer, fastapi, flutter, nlp, evals). This list is
+    inventory-checked by `tests/test_docs.py` — adding a skill without
+    updating it fails the suite; `tests/test_skills.py` checks every skill's
+    frontmatter, the always-on description budget, and the workflow
+    contracts below.
+  - The agentic loop (Kun Chen's workflow, built on native Claude Code):
+    `/core:plan` (interactive plan page, `PLAN.md` the source of truth) →
+    build → `skills/ship/` (`/core:ship`: intent, rebase, fresh-context
+    review by the `code-reviewer` agent with auto-fix/ask-user findings and a
+    risk level, end-to-end evidence, docs, PR or `Ship: main` push, CI
+    babysitting; never merges). `/core:firstmate` runs up to 3 crewmates as
+    `claude --bg -w` sessions that each ship their task; `/core:overnight`
+    runs capped gnhf loops with auto permission mode; `/core:learn` turns
+    corrections into AGENTS.md rules and moves conditional sections into
+    project skills. Ship is the only one the model may invoke (crewmates
+    call it); the other three are manual-only.
   - `skills/grill-me/` — the interview skill. With `GRILL_ME_UZ=1` in the
     `.env` of the Claude config dir it also shows each question in Uzbek:
     `scripts/translate.py` (stdlib only; Gemini `gemini-3.5-flash`, overridable
@@ -44,9 +58,10 @@ available in every project.
     `/model` and `/effort`).
   - `scripts/sync-machine.sh` — the single source of machine setup:
     marketplaces, kit plugins at user scope (`PLUGINS`), pyright + UI/UX Pro
-    Max (npm), ECC rules, model routing, status line. Idempotent; `--check`
-    reports drift without changing anything; retired plugins (`RETIRED`) and
-    project-scope duplicates are reported as `REMOVE`, never removed. Run by
+    Max + gnhf (npm), ECC rules, model routing, status line. Idempotent;
+    `--check` reports drift without changing anything; retired plugins
+    (`RETIRED`) and project-scope duplicates are reported as `REMOVE`, and
+    user-level skills from outside the kit as `INFO`, never removed. Run by
     `install.sh` and by `/core:init-dev-kit` from the freshly fetched
     marketplace clone (the loaded skill dir may be an older version). A new
     companion goes into this script, not into `install.sh`.
@@ -62,8 +77,13 @@ available in every project.
 
 ## Conventions
 
+Ship: main
+
 - No `version` field: every commit to `main` is the new version, so keep
   `main` releasable.
+- The line above makes `/core:ship` push straight to `main` here (no PRs),
+  after the full pipeline: review, `sh tests/run.sh`,
+  `claude plugin validate .`, docs and changelog, then CI watched to green.
 - One plugin, one scope: `core@dev-kit` (and every companion plugin) lives at
   user scope only. Never put `enabledPlugins` for them into a project `settings.json` or
   the shipped template — a project-scope copy pins an old version and its

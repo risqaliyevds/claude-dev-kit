@@ -31,9 +31,12 @@ untrack, or bulk reformat** — this can touch many files. Work in order.
      or `/effort` choice.
    - After I confirm: `sh "KIT/plugins/core/scripts/sync-machine.sh"`. It
      adds missing marketplaces; installs, enables and updates the kit plugins
-     (core, Ponytail, pyright-lsp) at user scope; installs/updates pyright and
-     UI/UX Pro Max; refreshes the ECC rules (removing stale ones); pins model
-     routing; repairs the status line. Report any `FAILED` line and continue.
+     (core, Ponytail, pyright-lsp) at user scope; installs/updates pyright,
+     UI/UX Pro Max and gnhf; refreshes the ECC rules (removing stale ones);
+     pins model routing; repairs the status line. Report any `FAILED` line
+     and continue. Show `INFO` lines about user-level skills from outside the
+     kit and ask whether each one still earns its always-on cost (never
+     delete one myself without a yes).
    - `REMOVE` lines are never applied by the script. Ask me about each one;
      on yes, run the command it prints (a project-scope copy is removed from
      inside that project).

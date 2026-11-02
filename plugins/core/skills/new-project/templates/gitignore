@@ -21,3 +21,6 @@ agentdb.*
 # Throwaway scratch output (see AGENTS.md "Project structure")
 tmp/
 *.bak
+
+# Background-agent worktrees (claude -w / --bg, /core:firstmate)
+.claude/worktrees/

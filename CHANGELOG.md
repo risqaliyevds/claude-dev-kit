@@ -7,6 +7,56 @@ on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). This repo has no
 ## [Unreleased]
 
 ### Added
+- The agentic workflow, modeled on Kun Chen's (ex-Meta L8, ~40 PRs/day) and
+  rebuilt on native Claude Code so it runs on Windows:
+  - `/core:ship`: the pipeline from "done" to a verified PR. It states the
+    intent, rebases, then runs a fresh-context review where auto-fix findings
+    are applied (3 rounds max) and ask-user findings are asked at once. It
+    collects test and end-to-end evidence in `tmp/ship/`, updates docs and
+    changelog, pushes and watches CI (3 repair attempts), then reports a risk
+    level that says how much to read. It opens a PR unless `AGENTS.md` has a
+    line that is exactly `Ship: main` (this repo does; the project template
+    explains the opt-in without containing it), never merges, and runs only
+    when asked.
+  - `code-reviewer` rewritten as an adversarial reviewer:
+    - judges the change against its intent;
+    - traces concrete inputs through new logic;
+    - rejects tests with no independent oracle;
+    - groups each defect class once;
+    - flags code the intent does not need;
+    - returns `auto-fix`/`ask-user` findings and a low/medium/high risk.
+  - `/core:firstmate`: splits directions into tasks and runs up to 3
+    background crewmates (`claude --bg -w <slug> --permission-mode auto`,
+    worktrees in `.claude/worktrees/`), each shipping its own PR; watches them
+    through `claude agents --json --all` (giving up after 4 hours) and reports
+    task → PR → risk.
+  - `/core:overnight`: capped gnhf loops (`--max-iterations`, `--max-tokens`,
+    `--stop-when`, `--worktree`, `GNHF_TELEMETRY=0`) in their own terminal tab,
+    with `--permission-mode auto` configured for `claude` instead of gnhf's
+    default of skipping permissions; `review` triages the run's commits.
+  - `/core:learn`: turns corrections into AGENTS.md rules (5 per run, each
+    with evidence) and moves conditional sections into project skills.
+  - `/core:plan` shows the plan as a private interactive page (decision
+    cards, comments read back with ArtifactComments). `PLAN.md` stays the
+    source of truth, with a local HTML fallback.
+  - Always-on engineering defaults in `00-precedence.md`:
+    - judge designs on quality, not imagined human effort (scope still minimal);
+    - reproduce bugs end to end first;
+    - prefer a CLI over an MCP server;
+    - offer `/core:ship` instead of a diff review.
+
+    Existing machines report drift until re-synced.
+  - The AGENTS.md template gains the end-to-end bug rule, a `/core:ship` line
+    and a "Maintaining this file" section. `.claude/worktrees/` is
+    gitignored here and in the template.
+  - The machine sync installs gnhf and reports user-level skills from outside
+    the kit as `INFO`, never removing them.
+  - `tests/test_skills.py`:
+    - frontmatter structure;
+    - a 5200-char budget for all skill and agent descriptions;
+    - the safety contracts of ship, firstmate, overnight, learn and plan.
+
+    Plus 3 new mutants.
 - `/core:grill-me` (+ `tests/test_grill_me.py`): the interview skill, now in
   the kit, with an optional English + Uzbek mode. Each question and
   recommended answer is translated by Gemini (`gemini-3.5-flash`, overridable

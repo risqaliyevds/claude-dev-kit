@@ -75,6 +75,21 @@ when a rule, skill or `[INTELLIGENCE]`/routing hint suggests another tier; pass
 `advisorModel`, `CLAUDE_CODE_SUBAGENT_MODEL`, `ANTHROPIC_DEFAULT_*_MODEL`);
 `CLAUDE_CODE_SUBAGENT_MODEL` overrides an agent file's `model: sonnet`. For a
 session that is mostly non-coding, `/model opus` keeps the main thread on Opus.
+
+## Engineering defaults
+
+- Judge design options on correctness, quality and maintainability, never on
+  how long a human would take: agent coding time is cheap, so do not pick a
+  weaker design because the better one "takes weeks". Scope still stays
+  minimal (Ponytail decides what to build, not how well).
+- Fix a bug by first reproducing it end to end, the way a user meets it; then
+  pin it with the failing test the repo's bug protocol asks for.
+- Prefer a CLI (`gh`, project scripts) over an MCP server for the same job,
+  and ask tools for compact output.
+- The loop is plan (`/core:plan`) -> build without interrupting -> ship
+  (`/core:ship` reviews, verifies and opens the PR) -> the user judges by risk
+  level. When work is done, offer `/core:ship` instead of asking the user to
+  read the diff line by line.
 EOF
 
 echo "ecc-rules: installed $(find "$DST" -name '*.md' | wc -l | tr -d ' ') rule files to $DST"

@@ -109,5 +109,17 @@ mutant "grill-me --setup yes adds a blank key line over an existing key" \
   plugins/core/skills/grill-me/scripts/translate.py \
   's|if answer == "yes" and "GEMINI_API_KEY" not in have:|if answer == "yes":|'
 
+mutant "/core:ship merges the PR itself" \
+  plugins/core/skills/ship/SKILL.md \
+  's|Never merge|Merge when green|'
+
+mutant "/core:overnight leaves gnhf skipping permissions" \
+  plugins/core/skills/overnight/SKILL.md \
+  's|       - auto|       - bypassPermissions|'
+
+mutant "sync stops installing gnhf" \
+  plugins/core/scripts/sync-machine.sh \
+  's|npm install -g gnhf|true|'
+
 if [ "$FAIL" -eq 0 ]; then echo "ALL MUTANTS KILLED"; else echo "SUITE TOO WEAK (or catalog stale)"; fi
 exit "$FAIL"

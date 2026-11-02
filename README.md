@@ -15,6 +15,7 @@ every always-on token competes with your code for the model's attention.
 - [How it fits together](#how-it-fits-together)
 - [One-time setup (per machine)](#one-time-setup-per-machine)
 - [Daily workflow](#daily-workflow)
+- [The agentic workflow](#the-agentic-workflow)
 - [The `core` plugin](#the-core-plugin)
 - [Companions](#companions)
 - [Model routing](#model-routing)
@@ -30,7 +31,7 @@ Inventory of everything enabled on a machine after `./install.sh`
 
 | Plugin | Skills | Agents | Always-on tokens | Role |
 |---|---|---|---|---|
-| `core@dev-kit` | 16 | 2 | ~1.2k | This kit: house conventions, scaffolding, changelog/commit/release flow |
+| `core@dev-kit` | 20 | 2 | ~1.2k | This kit: house conventions, scaffolding, changelog/commit/release flow |
 | `ponytail@ponytail` | 6 | 0 | ~1k | Anti-over-engineering discipline (YAGNI ladder) |
 | `pyright-lsp@claude-plugins-official` | 0 | 0 | 0 | Python language server: live type errors, go-to-definition, find references |
 
@@ -67,11 +68,12 @@ reports ~40k input tokens, most of it Claude Code's own prompt and tools.
 install.sh (once) and /core:init-dev-kit (any time) → sync-machine.sh
 ├─ marketplaces         dev-kit, ponytail, claude-plugins-official (added/updated)
 ├─ plugins (user scope) core@dev-kit, ponytail, pyright-lsp (installed/enabled/updated)
-├─ npm                  pyright, ui-ux-pro-max-cli (+ uipro init → UI/UX Pro Max skill)
+├─ npm                  pyright, ui-ux-pro-max-cli (+ uipro init → UI/UX Pro Max skill), gnhf
 ├─ ecc-rules.sh         → ~/.claude/rules/ecc/     (common security+git, python, dart, + precedence rule)
 ├─ model-routing.sh     → ~/.claude/settings.json  (Opus 5.5 everywhere, Sonnet 5.5 codes)
 ├─ statusline/setup.sh  → ~/.claude/statusline.py + settings.statusLine
-└─ reports, never removes: retired ecc@ecc, project-scope copies of kit plugins
+└─ reports, never removes: retired ecc@ecc, project-scope copies of kit plugins,
+                          user-level skills from outside the kit
 
 every session (SessionStart hook, core plugin)
 ├─ scaffold.sh   creates missing standard files in any git repo
@@ -137,13 +139,14 @@ ls ~/.claude/rules/ecc                               # 00-precedence.md common/ 
 mkdir my-app && cd my-app
 claude
 > /core:new-project my-app        # optional: full interactive bootstrap
-> /core:plan add user login       # research + plan on the strong model; persists docs/plans/
-> ...code...
-> /ponytail-review                # final pass: what can be deleted
-> /core:changelog                 # keep [Unreleased] current
-> /core:commit                    # Conventional Commit, changelog checked first
+> /core:plan add user login       # research + interactive plan page; persists docs/plans/
+> ...agent builds, uninterrupted...
+> /core:ship                      # review, verify, docs, PR with a risk level, CI watched
 > /core:release 1.2.0             # when it is time to cut a version
 ```
+
+The pieces `/core:ship` chains (`code-reviewer`, `/core:docs-sync`,
+`/core:changelog`, `/core:commit`, `/ponytail-review`) still work on their own.
 
 You rarely need `/core:new-project` by hand: the `SessionStart` hook
 (`hooks/scaffold.sh`) **auto-creates any missing standard files** the first
@@ -175,6 +178,45 @@ standard file, triages loose root files into the convention folders
 (`docs/`, `docs/plans/`, `scripts/`, `tmp/`), and formats — one consolidated
 plan, confirmed before anything moves.
 
+## The agentic workflow
+
+Modeled on [Kun Chen's agentic engineering workflow](https://youtu.be/iQyg-KypKAA)
+(ex-Meta L8; ~40 production PRs a day): you spend your time at the two ends,
+planning and judging, and agents do the middle. His tools are macOS-first, so
+the kit rebuilds each stage on native Claude Code features that work on
+Windows, with gnhf as the one companion.
+
+| Stage | Kun's tool | In the kit |
+|---|---|---|
+| Memory | tiny global file, AGENTS.md grown from corrections | `00-precedence.md` engineering defaults (quality over imagined effort, end-to-end bug repro, CLI over MCP); `/core:learn`; "Maintaining this file" in the AGENTS.md template |
+| Skill hygiene | evaluate, never trust stars | `tests/test_skills.py` description budget; sync reports user-level skills from outside the kit |
+| Plan | lavish (HTML plan you annotate) | `/core:plan` publishes a private interactive page (comments, decision cards); `docs/plans/PLAN.md` stays the source of truth |
+| Validate | no-mistakes | `/core:ship` + the adversarial `code-reviewer` (auto-fix / ask-user, risk level). Never merges |
+| Overnight | gnhf | `/core:overnight` runs gnhf with caps, `--worktree`, auto permission mode, telemetry off |
+| Parallel | treehouse + tmux | `claude --bg -w <name>` (native worktrees in `.claude/worktrees/`, gitignored) |
+| First mate | firstmate | `/core:firstmate`: up to 3 background crewmates, each shipping its own PR |
+
+**Risk levels** (set by `code-reviewer`, reported by `/core:ship`) decide how
+much of a change you read: **low** (docs, tests, small covered change) →
+merge from the summary; **medium** (new behavior, new dependency, partial
+tests) → read the PR body and the named files; **high** (auth, data, money,
+concurrency, public API, untested) → review the full diff.
+
+Setup notes:
+- **Push mode:** `/core:ship` opens a PR unless the repo's `AGENTS.md` has a
+  line that is exactly `Ship: main` (this repo does). In doubt, it opens a PR.
+- **Trusted repos only:** background crewmates start only in repos you have
+  opened in Claude Code once.
+- **Overnight permissions:** `/core:overnight` adds `--permission-mode auto`
+  for `claude` to `~/.gnhf/config.yml` (it asks first). Without that, gnhf
+  skips permissions.
+- **Not adopted:**
+  - firstmate (no Windows) and treehouse (`-w` is native);
+  - lavish (telemetry; the plan page uses Claude's artifacts);
+  - no-mistakes (hardcodes `~/.claude`, which breaks with `CLAUDE_CONFIG_DIR`);
+  - compact-adviser (sends context to a third party);
+  - the `kun` skill (runs an unpinned remote script, no license).
+
 ## The `core` plugin
 
 | Component | Type | What it does |
@@ -184,7 +226,11 @@ plan, confirmed before anything moves.
 | `/core:release <version>` | skill (manual only) | Moves `[Unreleased]` under a version heading, bumps version, commits, tags |
 | `/core:commit` | skill (manual only) | Conventional Commits workflow; checks the changelog first |
 | `/core:new-project` | skill (manual only) | Bootstraps CHANGELOG.md, CLAUDE.md, `.claude/settings.json`, `.gitignore` in a fresh repo |
-| `/core:plan <task>` | skill (manual, runs on Opus 5.5) | Deep research + implementation plan on the strong model; code gets written only after you confirm |
+| `/core:plan <task>` | skill (manual, runs on Opus 5.5) | Deep research + implementation plan on the strong model, shown as an interactive page you comment on; code gets written only after you confirm |
+| `/core:ship [intent]` | skill (auto + manual) | Pipeline from "done" to a verified PR: intent, rebase, fresh-context review with auto-fixes, tests + end-to-end evidence, docs + changelog, push, CI babysitting, risk level. Runs only when asked; never merges |
+| `/core:firstmate <direction>` | skill (manual only) | Splits directions into tasks and runs up to 3 background crewmates (`claude --bg -w`), each shipping its own PR; reports task → PR → risk |
+| `/core:overnight <objective>` | skill (manual only) | Long unattended gnhf loop toward a checkable goal, capped and isolated; `review` summarizes the run in the morning |
+| `/core:learn` | skill (manual only) | Turns this session's corrections into AGENTS.md rules (max 5, with evidence) and moves conditional sections into project skills |
 | `/core:announcement` | skill (manual only) | Drafts internal Telegram announcements in Uzbek in the house style — deadline explicit, clear action, purposeful emojis |
 | `/core:report-verify <file>` | skill (manual, + bundled script) | Extracts every hyperlink from a report (.docx/.html/.md/.txt), groups by domain, cross-checks against declared figures |
 | `/core:docs-sync` | skill (manual only) | Audits every doc against the current code: updates stale claims, deletes dead ones, archives finished plans |
@@ -195,13 +241,13 @@ plan, confirmed before anything moves.
 | `ai-engineer` | skill (background) | Conventions for LLM/agent code (keys, retries, structured output, evals) |
 | `fastapi` | skill (background) | FastAPI/Python backend rules: async SQLAlchemy 2.x, Pydantic v2, layered architecture |
 | `flutter` | skill (background) | Flutter/Dart rules: Material 3, one state-management approach, go_router, widget/golden tests |
-| `code-reviewer` | subagent (Opus 5.5) | Reviews diffs for bugs, security, and maintainability |
+| `code-reviewer` | subagent (Opus 5.5) | Adversarial review in a fresh context against the stated intent: traces inputs, checks tests have a real oracle, tags findings auto-fix / ask-user, returns a risk level |
 | `researcher` | subagent (Opus 5.5) | Heavy investigation in an isolated context; returns a concise brief instead of flooding your session |
 | auto-format | hook | Runs project-local Prettier on every file Claude writes/edits (no-op if absent) |
 | scaffold | hook | SessionStart: creates any missing standard project file in every git repo (create-if-missing; plugin repos skipped) |
 | status line | script + hook | Rate-limit status line (model, live effort level, context %, 5-hour 📊, weekly 📅 and weekly-Fable 🔮 usage % with reset countdowns; plain numbers, no gauges); installed at user scope by `install.sh` and self-healed every session by the SessionStart hook |
 | ECC rules installer | script | `plugins/core/scripts/ecc-rules.sh` copies ECC's security + git rules and the python/dart packs to `~/.claude/rules/ecc/` (removing anything else a previous run left) and writes the precedence rule (Ponytail ladder, ECC-name mapping, model policy) |
-| machine sync | script | `plugins/core/scripts/sync-machine.sh` brings a machine up to the kit: marketplaces, kit plugins at user scope, pyright + UI/UX Pro Max, ECC rules, model routing, status line. Idempotent; `--check` reports drift and changes nothing; the retired `ecc@ecc` plugin and project-scope duplicates are reported as `REMOVE` lines, never removed. Run by `install.sh` and `/core:init-dev-kit` |
+| machine sync | script | `plugins/core/scripts/sync-machine.sh` brings a machine up to the kit: marketplaces, kit plugins at user scope, pyright + UI/UX Pro Max + gnhf, ECC rules, model routing, status line. Idempotent; `--check` reports drift and changes nothing; the retired `ecc@ecc` plugin and project-scope duplicates are reported as `REMOVE` lines, and user-level skills from outside the kit as `INFO`, never removed. Run by `install.sh` and `/core:init-dev-kit` |
 | model routing | script | `plugins/core/scripts/model-routing.sh` pins Opus 5.5 for everything except coding (Sonnet 5.5) in `~/.claude/settings.json`; run by `sync-machine.sh` (`install.sh`, `/core:init-dev-kit`) |
 
 ### grill-me in English + Uzbek
@@ -275,6 +321,16 @@ requires Node.js) enforces the laziest solution that works: YAGNI first,
 stdlib before dependencies, one line before fifty. `/ponytail-review` makes a
 good final pass on any diff; `/ponytail-audit` scans a whole repo. The
 `senior-engineer` skill deliberately leaves YAGNI/minimalism to Ponytail.
+
+### gnhf — overnight agent loops
+
+[gnhf](https://github.com/kunchenguid/gnhf) (MIT, npm, Windows/macOS/Linux)
+runs one fresh `claude -p` per iteration toward an objective: it commits each
+success to a `gnhf/` branch, rolls back each failure, and stops at its caps.
+The machine sync installs it; `/core:overnight` is the only way the kit
+launches it, always with iteration and token caps, `--worktree`,
+`GNHF_TELEMETRY=0`, and auto permission mode instead of gnhf's default of
+skipping permissions. No skill or agent listing cost.
 
 ### UI/UX Pro Max — design intelligence
 

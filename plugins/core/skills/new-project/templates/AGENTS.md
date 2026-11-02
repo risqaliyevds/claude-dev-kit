@@ -29,11 +29,25 @@
   Assert desired behavior (the contract), not what the implementation happens
   to do. If a behavior change is intentional, update the test first, then
   make the code pass; never weaken, delete, or skip a failing test to get
-  green. Fix bugs test-first: add a failing test for the correct behavior,
-  fix the code until it passes, and keep the test as the regression guard.
+  green. Fix bugs by reproducing them end to end first (the way a user meets
+  them), then test-first: add a failing test for the correct behavior, fix the
+  code until it passes, and keep the test as the regression guard.
+- Finished work goes through `/core:ship` (review, tests, evidence, docs, PR
+  with a risk level). It opens a PR. To push straight to `main` instead, add
+  a line to this file holding only the word Ship, a colon, a space and main.
 - Active plan and task list live in `docs/plans/PLAN.md` and
   `docs/plans/TASKS.md` — read them before starting and keep `TASKS.md` checked
   off as you go.
+
+## Maintaining this file
+
+Every agent session loads this file, so keep it short and true.
+- When an agent makes a mistake that could happen again, add one line here
+  (or run `/core:learn`) so the next session does not repeat it.
+- Instructions only some tasks need (release steps, end-to-end test setup,
+  deploy) belong in a project skill, `.claude/skills/<name>/SKILL.md`, which
+  loads only when relevant. Move them out of this file.
+- Delete lines that no longer match the code.
 
 ## Project structure — where generated files go
 

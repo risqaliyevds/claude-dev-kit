@@ -51,6 +51,15 @@ for want in "Model policy" "claude-opus-5-5" "claude-sonnet-5-5" "Never pick Hai
   grep -q "$want" "$DST/00-precedence.md" || { echo "precedence rule lacks model policy: $want"; exit 1; }
 done
 
+# Engineering defaults load in every session: quality over imagined human
+# effort (scoped by Ponytail), end-to-end bug repro, CLI over MCP, and the
+# plan -> build -> /core:ship loop. sync-machine's staleness check keys on
+# `core:ship`, so a machine with an older precedence file reports drift.
+for want in "Engineering defaults" "how long a human would take" "end to end" "CLI" "core:ship"; do
+  grep -q "$want" "$DST/00-precedence.md" || { echo "precedence rule lacks engineering default: $want"; exit 1; }
+done
+grep -q "core:ship" "$ROOT/plugins/core/scripts/sync-machine.sh" || { echo "sync-machine staleness check does not key on the engineering defaults"; exit 1; }
+
 # 2. Idempotent and refreshing: a changed upstream file is re-copied, and the
 #    tree is otherwise identical after a second run.
 printf '# security v2\n' >"$ECC/rules/common/security.md"

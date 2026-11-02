@@ -1,6 +1,7 @@
 #!/usr/bin/env sh
 # Bring this machine's Claude Code setup up to the dev-kit: marketplaces, kit
-# plugins (installed, enabled, updated), companion tools, ECC rules, model
+# plugins (installed, enabled, updated), companion tools (pyright, UI/UX Pro
+# Max, gnhf), ECC rules, model
 # routing, status line. Idempotent — a second run changes nothing. Run by
 # install.sh and /core:init-dev-kit (from the fresh marketplace clone).
 #
@@ -86,6 +87,15 @@ fi
 others=$(printf '%s' "$PL" | jq -r --arg kit "$PLUGINS $RETIRED" \
   '[.[] | select(.scope == "user" and .enabled and (.id as $i | $kit | split(" ") | index($i) | not)) | .id] | join(" ")')
 [ -z "$others" ] || note "INFO    other enabled plugins (not the kit's; check their cost with claude plugin details <id>): $others"
+# User-level skills outside the kit: each description is always on, and a
+# popular skill is not a measured one. Reported, never removed.
+extra=""
+for d in "$CFG"/skills/*/; do
+  [ -d "$d" ] || continue
+  n=$(basename "$d")
+  [ "$n" = ui-ux-pro-max ] || extra="$extra $n"
+done
+[ -z "$extra" ] || note "INFO    user-level skills outside the kit (always-on descriptions; keep only ones that earn it):$extra"
 
 # --- companion tools -------------------------------------------------------
 if command -v pyright-langserver >/dev/null 2>&1; then
@@ -99,6 +109,12 @@ if command -v uipro >/dev/null 2>&1; then
   refresh npm update -g ui-ux-pro-max-cli
 else
   fix "uipro (UI/UX Pro Max) not installed" npm install -g ui-ux-pro-max-cli
+fi
+if command -v gnhf >/dev/null 2>&1; then
+  ok "gnhf"
+  refresh npm update -g gnhf
+else
+  fix "gnhf (overnight agent loops for /core:overnight) not installed" npm install -g gnhf
 fi
 if [ -d "$CFG/skills/ui-ux-pro-max" ]; then
   ok "UI/UX Pro Max skill"
@@ -122,8 +138,8 @@ if [ ! -f "$RULES/00-precedence.md" ]; then
   why="not installed"
 elif [ -n "$stale" ]; then
   why="out of date — still loading:$stale"
-elif ! grep -q 'core:code-reviewer' "$RULES/00-precedence.md"; then
-  why="out of date — precedence rule predates the lean kit"
+elif ! grep -q 'core:ship' "$RULES/00-precedence.md"; then
+  why="out of date — precedence rule predates the engineering defaults"
 fi
 if [ -n "$why" ]; then
   fix "ECC rules $why" sh "$HERE/ecc-rules.sh" ${ECC_SRC:+"$ECC_SRC"}

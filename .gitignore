@@ -15,3 +15,6 @@ __pycache__/
 
 # ruflo runtime state (repo-local; the template does not ship this)
 .claude-flow/
+
+# Background-agent and /core:firstmate worktrees (claude -w / --bg)
+.claude/worktrees/
