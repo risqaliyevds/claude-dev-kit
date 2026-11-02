@@ -30,7 +30,7 @@ Inventory of everything enabled on a machine after `./install.sh`
 
 | Plugin | Skills | Agents | Always-on tokens | Role |
 |---|---|---|---|---|
-| `core@dev-kit` | 15 | 2 | ~1.2k | This kit: house conventions, scaffolding, changelog/commit/release flow |
+| `core@dev-kit` | 16 | 2 | ~1.2k | This kit: house conventions, scaffolding, changelog/commit/release flow |
 | `ponytail@ponytail` | 6 | 0 | ~1k | Anti-over-engineering discipline (YAGNI ladder) |
 | `pyright-lsp@claude-plugins-official` | 0 | 0 | 0 | Python language server: live type errors, go-to-definition, find references |
 
@@ -179,7 +179,7 @@ plan, confirmed before anything moves.
 
 | Component | Type | What it does |
 |---|---|---|
-| `/core:init-dev-kit` | skill (manual only) | Syncs this machine to the latest kit (drift report → confirm → `sync-machine.sh`; removals asked one by one), then onboards the repo: scaffolds every standard file, reorganizes the tree into the convention folders, and formats |
+| `/core:init-dev-kit` | skill (manual only) | Syncs this machine to the latest kit (drift report → confirm → `sync-machine.sh`; removals asked one by one; asks once whether to enable [grill-me in Uzbek](#grill-me-in-english--uzbek)), then onboards the repo: scaffolds every standard file, reorganizes the tree into the convention folders, and formats |
 | `/core:changelog` | skill (auto + manual) | Updates `CHANGELOG.md` in Keep a Changelog format from your actual git changes |
 | `/core:release <version>` | skill (manual only) | Moves `[Unreleased]` under a version heading, bumps version, commits, tags |
 | `/core:commit` | skill (manual only) | Conventional Commits workflow; checks the changelog first |
@@ -188,6 +188,7 @@ plan, confirmed before anything moves.
 | `/core:announcement` | skill (manual only) | Drafts internal Telegram announcements in Uzbek in the house style — deadline explicit, clear action, purposeful emojis |
 | `/core:report-verify <file>` | skill (manual, + bundled script) | Extracts every hyperlink from a report (.docx/.html/.md/.txt), groups by domain, cross-checks against declared figures |
 | `/core:docs-sync` | skill (manual only) | Audits every doc against the current code: updates stale claims, deletes dead ones, archives finished plans |
+| `/core:grill-me` | skill (auto + manual, + bundled script) | Interviews you about a plan, one question at a time, each with a recommended answer; optionally shows every question in English + Uzbek (see below) |
 | `nlp` | skill (background) | NLP conventions: leakage-safe splits, uz/ru script handling, tokenizer fertility checks, metric-first evaluation |
 | `evals` | skill (background) | Eval-first harness for any LLM feature: cases.jsonl → runner → baseline → delta reporting |
 | `senior-engineer` | skill (background) | Engineering discipline applied to all code changes |
@@ -202,6 +203,27 @@ plan, confirmed before anything moves.
 | ECC rules installer | script | `plugins/core/scripts/ecc-rules.sh` copies ECC's security + git rules and the python/dart packs to `~/.claude/rules/ecc/` (removing anything else a previous run left) and writes the precedence rule (Ponytail ladder, ECC-name mapping, model policy) |
 | machine sync | script | `plugins/core/scripts/sync-machine.sh` brings a machine up to the kit: marketplaces, kit plugins at user scope, pyright + UI/UX Pro Max, ECC rules, model routing, status line. Idempotent; `--check` reports drift and changes nothing; the retired `ecc@ecc` plugin and project-scope duplicates are reported as `REMOVE` lines, never removed. Run by `install.sh` and `/core:init-dev-kit` |
 | model routing | script | `plugins/core/scripts/model-routing.sh` pins Opus 5.5 for everything except coding (Sonnet 5.5) in `~/.claude/settings.json`; run by `sync-machine.sh` (`install.sh`, `/core:init-dev-kit`) |
+
+### grill-me in English + Uzbek
+
+With Uzbek mode on, `/core:grill-me` shows each question and recommended
+answer in English, then in Uzbek, translated by Gemini (`gemini-3.5-flash`).
+Code, URLs, identifiers, technical terms (commit, endpoint, cache), product
+names and acronyms stay in English: code spans and URLs are cut out before
+the request and restored afterwards, so the model can neither alter them nor
+see them, and `plugins/core/skills/grill-me/scripts/prompt-uz.md` governs the
+rest (Latin script, formal "siz", English terms take Uzbek endings with a
+hyphen: `API-ga`, `commit-ni`).
+
+`/core:init-dev-kit` asks once whether you want it and records the answer in
+`.env` inside the Claude config dir (`~/.claude/.env`, or
+`$CLAUDE_CONFIG_DIR/.env`): `GRILL_ME_UZ=1` and an empty `GEMINI_API_KEY=`.
+Paste your key ([free from AI Studio](https://aistudio.google.com/apikey))
+into that file yourself, never into the chat, then run `translate.py --check`
+to see a sample translation. A `GEMINI_API_KEY` set in your shell wins over
+the file. If Gemini fails (bad key, offline), grill-me carries on in English.
+Google has deprecated `gemini-3.5-flash` and routes it to `gemini-3.6-flash`;
+set `GEMINI_MODEL` in the same file to pick another model.
 
 Conventions the kit ships to every project (see the `AGENTS.md` template):
 `AGENTS.md` holds the shared, tool-agnostic context and `CLAUDE.md` only

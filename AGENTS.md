@@ -9,10 +9,17 @@ available in every project.
 - `.claude-plugin/marketplace.json` — marketplace manifest (owner: Murod).
 - `plugins/core/` — the plugin:
   - `skills/` — skills (init-dev-kit, new-project, plan, changelog, release,
-    commit, announcement, report-verify, docs-sync, plus background standards:
-    senior-engineer, ai-engineer, fastapi, flutter, nlp, evals). This list is
-    inventory-checked by `tests/test_docs.py` — adding a skill without
-    updating it fails the suite.
+    commit, announcement, report-verify, docs-sync, grill-me, plus background
+    standards: senior-engineer, ai-engineer, fastapi, flutter, nlp, evals).
+    This list is inventory-checked by `tests/test_docs.py` — adding a skill
+    without updating it fails the suite.
+  - `skills/grill-me/` — the interview skill. With `GRILL_ME_UZ=1` in the
+    `.env` of the Claude config dir it also shows each question in Uzbek:
+    `scripts/translate.py` (stdlib only; Gemini `gemini-3.5-flash`, overridable
+    with `GEMINI_MODEL`) cuts code spans and URLs out before the request and
+    restores them after, and `scripts/prompt-uz.md` holds the rules for what
+    stays English. `/core:init-dev-kit` asks once and writes the flag; the user
+    pastes the key into that file, never into the chat.
   - `agents/` — code-reviewer, researcher.
   - `hooks/hooks.json` — prettier auto-format (PostToolUse) and the
     `scaffold.sh` auto-bootstrap (SessionStart).

@@ -7,6 +7,23 @@ on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). This repo has no
 ## [Unreleased]
 
 ### Added
+- `/core:grill-me` (+ `tests/test_grill_me.py`): the interview skill, now in
+  the kit, with an optional English + Uzbek mode. Each question and
+  recommended answer is translated by Gemini (`gemini-3.5-flash`, overridable
+  with `GEMINI_MODEL`) through the stdlib-only `scripts/translate.py`. Code
+  spans, fenced blocks and URLs are cut out before the request and restored
+  afterwards (they never reach the model; a response that drops or invents
+  one is retried, then rejected), and `scripts/prompt-uz.md` keeps technical
+  terms, names and acronyms in English, forces Latin-script Uzbek with `oʻ`/`gʻ`,
+  and treats the text as data, not instructions. 429/5xx/network errors are
+  retried with backoff; any failure falls back to English. Google already
+  routes `gemini-3.5-flash` to `gemini-3.6-flash`.
+- `/core:init-dev-kit` asks once whether to enable it (`translate.py --setup
+  yes|no`) and records the answer in `.env` inside the Claude config dir
+  (`GRILL_ME_UZ`, plus an empty `GEMINI_API_KEY=`). It never overwrites an
+  existing key, and the user pastes the key into the file instead of typing
+  it into the chat. Overlaps a standalone `~/.claude/skills/grill-me`; delete
+  that copy to avoid two skills answering "grill me".
 - `plugins/core/scripts/sync-machine.sh` (+ `tests/test_sync_machine.sh`):
   one idempotent sync that brings a machine up to the kit — adds missing
   marketplaces; installs, enables and updates `core`, Ponytail and

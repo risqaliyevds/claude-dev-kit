@@ -37,6 +37,25 @@ untrack, or bulk reformat** — this can touch many files. Work in order.
    - `REMOVE` lines are never applied by the script. Ask me about each one;
      on yes, run the command it prints (a project-scope copy is removed from
      inside that project).
+   - Grill-me in Uzbek (machine-level, asked once): `/core:grill-me` can show
+     every question in English + Uzbek, translated by Gemini. Run
+     `python3 "KIT/plugins/core/skills/grill-me/scripts/translate.py" --status`
+     and read its first word (empty output or a non-zero exit means that
+     interpreter does not run, e.g. the Windows Store `python3` stub: retry
+     with `python`, then `py -3`; if none runs, tell me Python 3 is missing
+     and skip this):
+     - `unset` (never asked): ask me with AskUserQuestion, "Show grill-me
+       questions in English + Uzbek? Needs a Gemini API key." (Yes / No).
+       Then run the same script with `--setup yes` or `--setup no`. It records
+       the choice in `.env` inside the Claude config dir (`GRILL_ME_UZ`, plus
+       an empty `GEMINI_API_KEY=` on yes), never overwrites an existing key,
+       and prints that file's path.
+     - After yes, tell me to paste my key into that file myself (free key:
+       https://aistudio.google.com/apikey). Never ask me to type it into the
+       chat — the transcript is stored. When I say it is done, run `--check`
+       and show me the sample translation or its error.
+     - `broken: ...`: show the reason and offer `--check` once I have fixed it.
+     - `on` or `off`: nothing to do.
    - Tell me to restart Claude Code so the new plugins, hooks and settings
      load.
 

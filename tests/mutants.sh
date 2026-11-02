@@ -101,5 +101,13 @@ mutant "BY DOMAIN counts occurrences instead of unique links" \
   plugins/core/skills/report-verify/scripts/extract_links.py \
   's|for u in unique$|for u in urls|'
 
+mutant "grill-me sends code spans and URLs to Gemini instead of masking them" \
+  plugins/core/skills/grill-me/scripts/translate.py \
+  's|^SPANS = .*|SPANS = re.compile(r"(?!x)x")|'
+
+mutant "grill-me --setup yes adds a blank key line over an existing key" \
+  plugins/core/skills/grill-me/scripts/translate.py \
+  's|if answer == "yes" and "GEMINI_API_KEY" not in have:|if answer == "yes":|'
+
 if [ "$FAIL" -eq 0 ]; then echo "ALL MUTANTS KILLED"; else echo "SUITE TOO WEAK (or catalog stale)"; fi
 exit "$FAIL"
